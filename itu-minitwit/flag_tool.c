@@ -26,7 +26,7 @@ int main(int argc, char *argv[]) {
   char query[256];
   const char *data = "Callback function called";
 
-  rc = sqlite3_open("/tmp/minitwit.db", &db);
+  rc = sqlite3_open("./minitwit.db", &db);
   if (rc) {
     fprintf(stderr, "Can't open database: %s\n", sqlite3_errmsg(db));
     return (0);
