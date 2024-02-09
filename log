@@ -1,0 +1,9 @@
+#Considerations
+##Session02
+- we will be using gitflow branching model: https://nvie.com/posts/a-successful-git-branching-model/
+Recomend to use git rebase instea of git merge into your own branch.
+- c# programming language is selected for refactoring.
+
+Recommended tools:
+- git krakken
+
