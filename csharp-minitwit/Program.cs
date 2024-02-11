@@ -1,7 +1,11 @@
 using System.Reflection;
 using Microsoft.OpenApi.Models;
+using csharp_minitwit.Services;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Dependency injection
+builder.Services.AddSingleton<IDatabaseService, DatabaseService>();
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
