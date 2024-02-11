@@ -81,4 +81,75 @@ public class HomeController : Controller
     {
         return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
     }
+
+    /// <summary>
+    /// Registers a new user.
+    /// </summary>
+    /// 
+    
+
+    [HttpGet("/register")]
+    public async Task<IActionResult> Register()
+    {
+        // Return the view
+        return View();
+    }
+
+    [HttpPost("/register")]
+    public async Task<IActionResult> Register(RegisterViewModel model)
+    {
+        if (ModelState.IsValid)
+        {
+            //Validate form inputs
+            if (string.IsNullOrEmpty(model.Username))
+            {
+                ModelState.AddModelError("Username", "You have to enter a username");
+            }
+            else if (string.IsNullOrEmpty(model.Password))
+            {
+                ModelState.AddModelError("Password", "You have to enter a password");
+            }
+            else if (string.IsNullOrEmpty(model.Email))
+            {
+                ModelState.AddModelError("Email", "You have to enter an email address");
+            }
+            else if (model.Password != model.Password2)
+            {
+                ModelState.AddModelError("Password2", "The two passwords do not match");
+            }
+            else if (await IsUsernameTaken(model.Username))
+            {
+                ModelState.AddModelError("Username", "The username is already taken");
+            }
+            else
+            {
+                //Insert user into database
+                await InsertUser(model.Username, model.Email, model.Password);
+                TempData["SuccessMessage"] = "You were successfully registered and can login now";
+                return RedirectToAction("Login");
+            }
+        }
+        // If model state is not valid, return back to the registration form with validation errors
+        return View(model);
+    }
+
+    private async Task<bool> IsUsernameTaken(string username)
+    {
+        throw new NotImplementedException();
+    }
+
+    private async Task InsertUser(string username, string email, string password)
+    {
+    /*     var sqlQuery = @"
+            INSERT INTO user (username, email, pw_hash)
+            VALUES (@Username, @Email, @Password)";
+        var parameters = new Dictionary<string, object>
+        {
+            { "@Username", username },
+            { "@Email", email },
+            { "@Password", GeneratePasswordHash(password) }
+        };
+        await _databaseService.ExecuteDb(sqlQuery, parameters); */
+    }
+   
 }
