@@ -8,15 +8,16 @@
 
 <body>
     <h2>@title</h2>
-    @* @if (isUserAuthenticated)
-    {
+    @* // TODO: when register and login functionalities are working, add conditional rendering.
+    @if (isUserAuthenticated)
+    { *@
     <div class="twitbox">
     <h3>What's on your mind, @User.Identity.Name?</h3>
     <form action="@Url.Action("AddMessage", "Home")" method="post">
     <p><input type="text" name="text" size="60"><input type="submit" value="Share"></p>
     </form>
     </div>
-    } *@
+    @* } *@
 
     <ul class="messages">
         @foreach (var message in Model)
