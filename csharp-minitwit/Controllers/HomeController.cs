@@ -22,8 +22,15 @@ public class HomeController : Controller
     /// <returns></returns>
     public IActionResult Index()
     {
+        // TODO: Correctly check whether there is a logged user when register and login functionalities are working, and uncomment Redirect.
+        // if (!User.Identity.IsAuthenticated)
+        // {
+        //     return Redirect("/public");
+        // }
+
         return View();
     }
+
 
     /// <summary>
     /// Displays the latest messages of all users.
