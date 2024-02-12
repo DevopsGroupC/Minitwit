@@ -21,7 +21,10 @@ from werkzeug.security import check_password_hash, generate_password_hash
 
 
 # configuration
-DATABASE = '/tmp/minitwit.db'
+# Database is no longer in the system's 'tmp' folder.
+#DATABASE = '/tmp/minitwit.db'
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DATABASE = os.path.join(BASE_DIR, 'minitwit.db')
 PER_PAGE = 30
 DEBUG = True
 SECRET_KEY = 'development key'
@@ -112,10 +115,12 @@ def timeline():
 @app.route('/public')
 def public_timeline():
     """Displays the latest messages of all users."""
-    return render_template('timeline.html', messages=query_db('''
+    query = '''
         select message.*, user.* from message, user
         where message.flagged = 0 and message.author_id = user.user_id
-        order by message.pub_date desc limit ?''', [PER_PAGE]))
+        order by message.pub_date desc limit ?'''
+    messages = query_db(query, [PER_PAGE])  
+    return render_template('timeline.html', messages=messages)
 
 
 @app.route('/<username>')
@@ -182,7 +187,7 @@ def add_message():
     return redirect(url_for('timeline'))
 
 
-@app.route('/login', methods=['GET', 'POST'])
+@app.route('/login', methods=['GET', 'POST'])   
 def login():
     """Logs the user in."""
     if g.user:
