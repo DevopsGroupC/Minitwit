@@ -46,7 +46,25 @@ public class HomeController : Controller
             ORDER BY message.pub_date DESC
             LIMIT @PerPage";
         var queryResult = await _databaseService.QueryDb(sqlQuery);
-        return Ok(queryResult);
+
+        var messages = queryResult.Select(row =>
+    {
+        var dict = (IDictionary<string, object>)row;
+        return new MessageModel
+        {
+            MessageId = (long)dict["message_id"],
+            AuthorId = (long)dict["author_id"],
+            Text = (string)dict["text"],
+            PubDate = (long)dict["pub_date"],
+            Flagged = (long)dict["flagged"],
+            UserId = (long)dict["user_id"],
+            Username = (string)dict["username"],
+            Email = (string)dict["email"],
+            PwHash = (string)dict["pw_hash"]
+        };
+    }).ToList();
+
+        return View("PublicTimeline", messages);
     }
 
     /// <summary>
