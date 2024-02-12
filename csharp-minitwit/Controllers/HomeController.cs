@@ -20,10 +20,17 @@ public class HomeController : Controller
     /// This timeline shows the user's messages as well as all the messages of followed users.
     /// </summary>
     /// <returns></returns>
-    public IActionResult Index()
+    public async Task<IActionResult> Index()
     {
+        // TODO: Correctly check whether there is a logged user when register and login functionalities are working, and uncomment Redirect.
+        // if (!User.Identity.IsAuthenticated)
+        // {
+        //     return Redirect("/public");
+        // }
+
         return View();
     }
+
 
     /// <summary>
     /// Displays the latest messages of all users.

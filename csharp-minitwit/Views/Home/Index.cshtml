@@ -1,8 +1,27 @@
 ﻿@{
+    Layout = "~/Views/Home/Layout.cshtml";
     ViewData["Title"] = "Home Page";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
-</div>
+@model List<MessageModel>
+
+<h2>@ViewData["Title"]</h2>
+
+<ul class="messages">
+    @* // TODO: when register and login functionalities are working, add conditional rendering.
+    If user is logged in, render each of its messages.
+    {
+        @foreach (var message in MessageModel)
+        {
+            <li>
+                <img src="" alt="">
+                <p>
+                </p>
+            </li>
+        }
+    }
+    else 
+    { *@
+        <li><em>There's no message so far.</em></li>
+    @* } *@
+</ul>
