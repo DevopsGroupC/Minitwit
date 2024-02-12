@@ -6,17 +6,22 @@ using Dapper;
 
 namespace csharp_minitwit.Services;
 
-public class DatabaseService(IConfiguration configuration) : IDatabaseService
+public class DatabaseService : IDatabaseService
 {
-    private readonly string _connectionString = configuration.GetConnectionString("DefaultConnection")!;
-    private readonly int _perPage = configuration.GetValue<int>("Constants:PerPage")!;
+    private readonly string _connectionString;
+    private readonly int _perPage;
 
-    public async Task<dynamic> QueryDb(string sqlQuery)
+    public DatabaseService(IConfiguration configuration)
+    {
+        _connectionString = configuration.GetConnectionString("DefaultConnection")!;
+        _perPage = configuration.GetValue<int>("Constants:PerPage")!;
+    }
+
+    public async Task<IEnumerable<dynamic>> QueryDb(string sqlQuery)
     {
         using (var connection = new SqliteConnection(_connectionString))
         {
             await connection.OpenAsync();
-
             return await connection.QueryAsync<dynamic>(sqlQuery, new { PerPage = _perPage });
         }
     }
