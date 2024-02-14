@@ -31,7 +31,6 @@ public class HomeController : Controller
     /// <returns></returns>
     public async Task<IActionResult> Index()
     {
-        
         // TODO: Correctly check whether there is a logged user when register and login functionalities are working, and uncomment Redirect.
         if (!string.IsNullOrEmpty(HttpContext.Session.GetString("user_id")))
         {
@@ -87,20 +86,20 @@ public class HomeController : Controller
         if (!string.IsNullOrEmpty(HttpContext.Session.GetString("user_id"))) {
             return Redirect("/");
         }
-        string error = null;
-        if (Request.Method == "POST")
+        string error = "";
+        if (Request.Method == "POST" && ModelState.IsValid)
         {
             var query = "SELECT * FROM user WHERE username = @Username";
-            var dict = new Dictionary<string, object> {{"@Username", model.Username}};
+            var dict = new Dictionary<string, object> {{"@Username", model.Username!}};
             var users = await _databaseService.QueryDb<UserModel>(query, dict);
             var user = users.FirstOrDefault();
 
             if (!users.Any()) {
                 error = "Invalid username";
-            } else if (model.Password.GetHashCode().ToString() != user.pw_hash) {
+            } else if (model.Password?.GetHashCode().ToString() != user?.pw_hash) {
                 error = "Invalid password";
             } else {
-                HttpContext.Session.SetInt32("user_id", user.user_id);
+                HttpContext.Session.SetInt32("user_id", user!.user_id);
                 return Redirect("/public");
             }
         }
