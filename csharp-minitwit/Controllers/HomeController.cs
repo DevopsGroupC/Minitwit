@@ -125,6 +125,34 @@ public class HomeController : Controller
 
         return View("Timeline", viewModel);
     }
+    
+
+    /// <summary>
+    /// Registers a new message for the user.
+    /// </summary>
+    [HttpPost("/add_message")]
+    public async Task<IActionResult> AddMessage ([FromForm] MessageModel model)
+    {
+         if (string.IsNullOrEmpty(HttpContext.Session.GetString("user_id"))) {
+            return Unauthorized(); 
+        } 
+        if (!string.IsNullOrEmpty(model.Text)){
+            var query = @"INSERT INTO message (author_id, text, pub_date, flagged)  
+                            VALUES (@Author_id, @Text, @Pub_date, @Flagged)";
+        
+        var parameters = new Dictionary<string, object> {
+            {"@Author_id", HttpContext.Session.GetString("user_id")!}, 
+            {"@Text", Request.Form["text"]},
+            {"@Pub_date", (int)DateTimeOffset.Now.ToUnixTimeSeconds()}, 
+            {"@Flagged", 0}
+        };
+        await _databaseService.QueryDb<dynamic>(query, parameters);
+        }
+        return Redirect("/");
+    }
+
+
+
 
     /// <summary>
     /// Logs the user in.
