@@ -1,0 +1,32 @@
+@{
+    ViewData["Title"] = "Sign In";
+}
+
+@model csharp_minitwit.Models.LoginViewModel
+
+<h2>Sign In</h2>
+@if (!ViewData.ModelState.IsValid)
+{
+    <div class="error">
+        <strong>Errors:</strong>
+        <ul>
+            @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+            {
+                <li>@error.ErrorMessage</li>
+            }
+        </ul>
+    </div>
+}
+@* @if (!string.IsNullOrEmpty(ViewBag.Error)) *@
+@* { *@
+@*     <div class="error"><strong>Error:</strong> @ViewBag.Error</div> *@
+@* } *@
+<form asp-action="Login" method="post">
+    <dl>
+        <dt>Username:</dt>
+        <dd><input type="text" asp-for="Username" size="30"></dd>
+        <dt>Password:</dt>
+        <dd><input type="password" asp-for="Password" size="30"></dd>
+    </dl>
+    <div class="actions"><input type="submit" value="Sign In"></div>
+</form>

@@ -9,20 +9,17 @@ namespace csharp_minitwit.Services;
 public class DatabaseService : IDatabaseService
 {
     private readonly string _connectionString;
-    private readonly int _perPage;
-
     public DatabaseService(IConfiguration configuration)
     {
         _connectionString = configuration.GetConnectionString("DefaultConnection")!;
-        _perPage = configuration.GetValue<int>("Constants:PerPage")!;
     }
 
-    public async Task<IEnumerable<dynamic>> QueryDb(string sqlQuery)
+    public async Task<IEnumerable<T>> QueryDb<T>(string sqlQuery, Dictionary<string, object> parameters)
     {
         using (var connection = new SqliteConnection(_connectionString))
         {
             await connection.OpenAsync();
-            return await connection.QueryAsync<dynamic>(sqlQuery, new { PerPage = _perPage });
+            return await connection.QueryAsync<T>(sqlQuery, parameters);
         }
     }
 }

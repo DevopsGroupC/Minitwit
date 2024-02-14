@@ -2,5 +2,5 @@ namespace csharp_minitwit.Services;
 
 public interface IDatabaseService
 {
-    Task<IEnumerable<dynamic>> QueryDb(string sqlQuery);
+    Task<IEnumerable<T>> QueryDb<T>(string sqlQuery, Dictionary<string, object> parameters);
 }
