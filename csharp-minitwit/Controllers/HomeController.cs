@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Security.Cryptography;
 using Microsoft.AspNetCore.Mvc;
 using csharp_minitwit.Models;
 using csharp_minitwit.Services;
@@ -9,11 +10,15 @@ public class HomeController : Controller
 {
     private readonly ILogger<HomeController> _logger;
     private readonly IDatabaseService _databaseService;
+    private readonly IConfiguration _configuration;
+    private readonly int _perPage;
 
-    public HomeController(ILogger<HomeController> logger, IDatabaseService databaseService)
+    public HomeController(ILogger<HomeController> logger, IDatabaseService databaseService, IConfiguration configuration)
     {
         _databaseService = databaseService;
         _logger = logger;
+        _configuration = configuration;
+        _perPage = configuration.GetValue<int>("Constants:PerPage")!;
     }
     /// <summary>
     /// Shows a users timeline or if no user is logged in it will redirect to the public timeline.
@@ -45,7 +50,9 @@ public class HomeController : Controller
             WHERE message.flagged = 0
             ORDER BY message.pub_date DESC
             LIMIT @PerPage";
-        var queryResult = await _databaseService.QueryDb(sqlQuery);
+
+        var dict = new Dictionary<string, object> {};
+        var queryResult = await _databaseService.QueryDb(sqlQuery, dict);
 
         var messages = queryResult.Select(row =>
     {
@@ -96,7 +103,7 @@ public class HomeController : Controller
     }
 
     [HttpPost("/register")]
-    public async Task<IActionResult> Register(RegisterViewModel model)
+    public async Task<IActionResult> Register([FromBody] RegisterViewModel model)
     {
         if (ModelState.IsValid)
         {
@@ -140,16 +147,15 @@ public class HomeController : Controller
 
     private async Task InsertUser(string username, string email, string password)
     {
-    /*     var sqlQuery = @"
+        var sqlQuery = @"
             INSERT INTO user (username, email, pw_hash)
             VALUES (@Username, @Email, @Password)";
         var parameters = new Dictionary<string, object>
         {
             { "@Username", username },
             { "@Email", email },
-            { "@Password", GeneratePasswordHash(password) }
+            { "@Password", password.GetHashCode() } // Not a safe way to hash passwords.
         };
-        await _databaseService.ExecuteDb(sqlQuery, parameters); */
+        await _databaseService.QueryDb(sqlQuery, parameters);
     }
-   
 }
