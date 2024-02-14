@@ -6,6 +6,7 @@ using csharp_minitwit.Services;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication;
+using System.Net.Http;
 
 namespace csharp_minitwit.Controllers;
 
@@ -55,7 +56,7 @@ public class HomeController : Controller
             LIMIT @PerPage";
 
         var dict = new Dictionary<string, object> {{"@PerPage", _perPage}};
-        var queryResult = await _databaseService.QueryDb(sqlQuery, dict);
+        var queryResult = await _databaseService.QueryDb<dynamic>(sqlQuery, dict);
 
         var messages = queryResult.Select(row =>
     {
@@ -76,41 +77,37 @@ public class HomeController : Controller
 
         return View("PublicTimeline", messages);
     }
-
-    [HttpGet("/login")]
-    public async Task<IActionResult> Login()
-    {
-        if (!string.IsNullOrEmpty(HttpContext.Session.GetString("user_id")))
-        {
-            return Redirect("/");
-        } else
-        {
-            return View("Login");
-        }
-    }
+    
     /// <summary>
     /// Logs the user in.
     /// </summary>
-    [HttpPost("/login")]
-    public async Task<IActionResult> Login([FromBody] LoginViewModel model)
+    [HttpGet("/login"), HttpPost("/login")]
+    public async Task<IActionResult> Login([FromForm] LoginViewModel model)
     {
-        var hashed_password = model.Password.GetHashCode(); // Not a safe way to hash passwords.
-        var dict = new Dictionary<string, object>
+        if (!string.IsNullOrEmpty(HttpContext.Session.GetString("user_id"))) {
+            return Redirect("/");
+        }
+        string error = null;
+        if (Request.Method == "POST")
         {
-            {"@Username", model.Username},
-            {"@Password", hashed_password}
-        };
-       var query = "SELECT * FROM user WHERE username = @Username AND pw_hash = @Password";
-       var result = await _databaseService.QueryDb(query, dict);
+            var query = "SELECT * FROM user WHERE username = @Username";
+            var dict = new Dictionary<string, object> {{"@Username", model.Username}};
+            var users = await _databaseService.QueryDb<UserModel>(query, dict);
+            var user = users.FirstOrDefault();
 
-        // Logic for setting the auth cookie
-        if (result.Count() > 0) {
-            var user = result.First();
-            Console.WriteLine(user);
-            //HttpContext.Session.SetString("user_id", user.user_id.ToString());
-       }
-       
-       return View("timeline");
+            if (!users.Any()) {
+                error = "Invalid username";
+            } else if (model.Password.GetHashCode().ToString() != user.pw_hash) {
+                error = "Invalid password";
+            } else {
+                HttpContext.Session.SetInt32("user_id", user.user_id);
+                return Redirect("/public");
+            }
+        }
+        if (!string.IsNullOrEmpty(error)) {
+            ModelState.AddModelError("", error); // Add error to entire form
+        }
+        return View("login");
     }
 
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
@@ -131,7 +128,7 @@ public class HomeController : Controller
     }
 
     [HttpPost("/register")]
-    public async Task<IActionResult> Register([FromBody] RegisterViewModel model)
+    public async Task<IActionResult> Register([FromForm] RegisterViewModel model)
     {
         if (ModelState.IsValid)
         {
@@ -174,7 +171,7 @@ public class HomeController : Controller
     {
         var sqlQuery = "SELECT * FROM user WHERE username = @Username";
         var parameters = new Dictionary<string, object> {{"@Username", username}};
-        var result = await _databaseService.QueryDb(sqlQuery, parameters);
+        var result = await _databaseService.QueryDb<dynamic>(sqlQuery, parameters);
         return result.Count() > 0;
     }
 
@@ -189,7 +186,7 @@ public class HomeController : Controller
             { "@Email", email },
             { "@Password", password.GetHashCode() } // Not a safe way to hash passwords.
         };
-        return await _databaseService.QueryDb(sqlQuery, parameters);
+        return await _databaseService.QueryDb<dynamic>(sqlQuery, parameters);
     }
 
     [HttpGet("/test")]

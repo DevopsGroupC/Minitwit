@@ -14,12 +14,12 @@ public class DatabaseService : IDatabaseService
         _connectionString = configuration.GetConnectionString("DefaultConnection")!;
     }
 
-    public async Task<IEnumerable<dynamic>> QueryDb(string sqlQuery, Dictionary<string, object> parameters)
+    public async Task<IEnumerable<T>> QueryDb<T>(string sqlQuery, Dictionary<string, object> parameters)
     {
         using (var connection = new SqliteConnection(_connectionString))
         {
             await connection.OpenAsync();
-            return await connection.QueryAsync<dynamic>(sqlQuery, parameters);
+            return await connection.QueryAsync<T>(sqlQuery, parameters);
         }
     }
 }

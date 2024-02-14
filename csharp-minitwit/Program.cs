@@ -7,7 +7,8 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Dependency injection
 builder.Services.AddSingleton<IDatabaseService, DatabaseService>();
- 
+builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
+
 // Add services to the container.
 // builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
 //     .AddCookie(options =>
