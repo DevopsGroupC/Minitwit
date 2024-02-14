@@ -106,6 +106,7 @@ public class HomeController : Controller
             }
             else
             {
+                Console.WriteLine("User logged in with id: " + user.user_id);
                 HttpContext.Session.SetInt32("user_id", user.user_id);
                 return Redirect("/public");
             }
@@ -200,28 +201,30 @@ public class HomeController : Controller
     public async Task<IActionResult> UserTimeline(string username)
     {
 
-        string USER_ID = HttpContext.Session.GetString("user_id");
-
-
         // Query for the profile user
         var query = "SELECT * FROM user WHERE username = @Username";
         var dict = new Dictionary<string, object> { { "@Username", username } };
         var users = await _databaseService.QueryDb<UserModel>(query, dict);
 
-        UserModel profileUser = users.FirstOrDefault();
+        UserModel? profileUser = users.FirstOrDefault();
 
         bool followed = false;
+
         if (profileUser == null)
         {
             return NotFound();
         }
 
-        if (!string.IsNullOrEmpty(USER_ID))
+        var currentUserId = HttpContext.Session.GetInt32("user_id");
+
+        Console.WriteLine("Current user id: " + currentUserId);
+
+        if (currentUserId.HasValue)
         {// Check if the current user is following the profile user
             var followCheckQuery = "SELECT 1 FROM follower WHERE who_id = @CurrentUserId AND whom_id = @ProfileUserId";
             var followCheckParams = new Dictionary<string, object>
         {
-            {"CurrentUserId", USER_ID},
+            {"CurrentUserId", currentUserId},
             {"ProfileUserId", profileUser.user_id}
         };
 
@@ -235,22 +238,40 @@ public class HomeController : Controller
             JOIN user ON user.user_id = message.author_id
             WHERE user.user_id = @UserId
             ORDER BY message.pub_date DESC LIMIT @Limit";
-        var messages = await _databaseService.QueryDb<MessageModel>(messagesQuery, new Dictionary<string, object>
+        var queryResult = await _databaseService.QueryDb<dynamic>(messagesQuery, new Dictionary<string, object>
         {
             {"UserId", profileUser.user_id},
             {"Limit", 50} // Assuming PER_PAGE is 50, replace with your actual constant
         });
+        // needs to be converted to a new method because it is used twice
+        var messages = queryResult.Select(row =>
+            {
+                var dict = (IDictionary<string, object>)row;
+                return new MessageModel
+                {
+                    MessageId = (long)dict["message_id"],
+                    AuthorId = (long)dict["author_id"],
+                    Text = (string)dict["text"],
+                    PubDate = (long)dict["pub_date"],
+                    Flagged = (long)dict["flagged"],
+                    UserId = (long)dict["user_id"],
+                    Username = (string)dict["username"],
+                    Email = (string)dict["email"],
+                    PwHash = (string)dict["pw_hash"]
+                };
+            }).ToList();
+
 
         // Assuming you have a ViewModel or a way to pass data to your view
         var viewModel = new UserTimelineViewModel
         {
+            currentUserId = currentUserId,
             profileUser = profileUser,
             messages = messages.ToList(),
             followed = followed
         };
 
         return View("Timeline", viewModel);
-
-
     }
+
 }

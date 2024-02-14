@@ -22,7 +22,7 @@ builder.Services.AddDistributedMemoryCache();
 builder.Services.AddSession(options =>
 {
     options.Cookie.Name = ".minitwit.Session";
-    options.IdleTimeout = TimeSpan.FromSeconds(10);
+    options.IdleTimeout = TimeSpan.FromSeconds(10000);
     options.Cookie.HttpOnly = true;
     options.Cookie.IsEssential = true;
 });

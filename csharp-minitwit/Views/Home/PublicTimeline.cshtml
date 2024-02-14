@@ -1,4 +1,5 @@
 @model List<MessageModel>
+    @using csharp_minitwit.Utils;
 
 @{
     Layout = "~/Views/Home/Layout.cshtml";
@@ -22,8 +23,8 @@
     <ul class="messages">
         @foreach (var message in Model)
     {
-        var gravatarUrl = $"https://www.gravatar.com/avatar/{message.Email}?s=48";
-        var userProfileUrl = $"~/user_timeline?username={message.Username}";
+        var gravatarUrl = GravatarHelper.GetGravatarUrl(message.Email, 48);
+        var userProfileUrl = $"/{message.Username}";
 
         <li>
             <img src="@gravatarUrl" alt="Gravatar">
