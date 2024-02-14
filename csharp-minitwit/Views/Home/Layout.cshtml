@@ -10,18 +10,22 @@
     <div class="page">
         <h1>MiniTwit</h1>
         <div class="navigation">
-            @* // TODO: when register and login functionalities are working, add conditional rendering. *@
-
-            @* If user is authenticated:
-            <a href="">my timeline</a> |
-            <a href="/public">public timeline</a> |
-            <a href="/logout">sign out</a> *@
-
-            @* If user is not authenticated: *@
-            <a href="/public">public timeline</a> |
-            <a href="/register">sign up</a> |
-            <a href="/login">sign in</a>
-
+            @if (Context.Session.GetString("user_id") != null)
+            {
+                <text>
+                <a href="/">my timeline</a> &#124;
+                <a href="/public">public timeline</a> &#124;
+                <a href="/logout">sign out</a>
+                </text>
+            }
+            else
+            {
+                <text>
+                    <a href="/public">public timeline</a> &#124;
+                    <a href="/register">sign up</a> &#124;
+                    <a href="/login">sign in</a>
+                </text>
+            }
         </div>
         <div class="body">
             @RenderBody()
