@@ -3,6 +3,9 @@ using System.Security.Cryptography;
 using Microsoft.AspNetCore.Mvc;
 using csharp_minitwit.Models;
 using csharp_minitwit.Services;
+using System.Security.Claims;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication;
 
 namespace csharp_minitwit.Controllers;
 
@@ -11,28 +14,28 @@ public class HomeController : Controller
     private readonly ILogger<HomeController> _logger;
     private readonly IDatabaseService _databaseService;
     private readonly IConfiguration _configuration;
-    private readonly int _perPage;
+    private readonly string _perPage;
 
     public HomeController(ILogger<HomeController> logger, IDatabaseService databaseService, IConfiguration configuration)
     {
         _databaseService = databaseService;
         _logger = logger;
         _configuration = configuration;
-        _perPage = configuration.GetValue<int>("Constants:PerPage")!;
+        _perPage = configuration.GetValue<string>("Constants:PerPage")!;
     }
     /// <summary>
     /// Shows a users timeline or if no user is logged in it will redirect to the public timeline.
     /// This timeline shows the user's messages as well as all the messages of followed users.
     /// </summary>
     /// <returns></returns>
-    public IActionResult Index()
+    public async Task<IActionResult> Index()
     {
+        
         // TODO: Correctly check whether there is a logged user when register and login functionalities are working, and uncomment Redirect.
-        // if (!User.Identity.IsAuthenticated)
-        // {
-        //     return Redirect("/public");
-        // }
-
+        if (!string.IsNullOrEmpty(HttpContext.Session.GetString("user_id")))
+        {
+            return Redirect("/public");
+        }
         return View();
     }
 
@@ -51,7 +54,7 @@ public class HomeController : Controller
             ORDER BY message.pub_date DESC
             LIMIT @PerPage";
 
-        var dict = new Dictionary<string, object> {};
+        var dict = new Dictionary<string, object> {{"@PerPage", _perPage}};
         var queryResult = await _databaseService.QueryDb(sqlQuery, dict);
 
         var messages = queryResult.Select(row =>
@@ -74,13 +77,40 @@ public class HomeController : Controller
         return View("PublicTimeline", messages);
     }
 
+    [HttpGet("/login")]
+    public async Task<IActionResult> Login()
+    {
+        if (!string.IsNullOrEmpty(HttpContext.Session.GetString("user_id")))
+        {
+            return Redirect("/");
+        } else
+        {
+            return View("Login");
+        }
+    }
     /// <summary>
     /// Logs the user in.
     /// </summary>
-    [HttpGet("/login"), HttpPost("/login")]
-    public async Task<IActionResult> Login()
+    [HttpPost("/login")]
+    public async Task<IActionResult> Login([FromBody] LoginViewModel model)
     {
-        throw new NotImplementedException();
+        var hashed_password = model.Password.GetHashCode(); // Not a safe way to hash passwords.
+        var dict = new Dictionary<string, object>
+        {
+            {"@Username", model.Username},
+            {"@Password", hashed_password}
+        };
+       var query = "SELECT * FROM user WHERE username = @Username AND pw_hash = @Password";
+       var result = await _databaseService.QueryDb(query, dict);
+
+        // Logic for setting the auth cookie
+        if (result.Count() > 0) {
+            var user = result.First();
+            Console.WriteLine(user);
+            //HttpContext.Session.SetString("user_id", user.user_id.ToString());
+       }
+       
+       return View("timeline");
     }
 
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
@@ -93,8 +123,6 @@ public class HomeController : Controller
     /// Registers a new user.
     /// </summary>
     /// 
-    
-
     [HttpGet("/register")]
     public async Task<IActionResult> Register()
     {
@@ -131,7 +159,9 @@ public class HomeController : Controller
             else
             {
                 //Insert user into database
-                await InsertUser(model.Username, model.Email, model.Password);
+                Console.WriteLine("Attempting to insert user into database");
+                var result = await InsertUser(model.Username, model.Email, model.Password);
+                Console.WriteLine("AFinished inserting user into database");
                 TempData["SuccessMessage"] = "You were successfully registered and can login now";
                 return RedirectToAction("Login");
             }
@@ -142,10 +172,13 @@ public class HomeController : Controller
 
     private async Task<bool> IsUsernameTaken(string username)
     {
-        throw new NotImplementedException();
+        var sqlQuery = "SELECT * FROM user WHERE username = @Username";
+        var parameters = new Dictionary<string, object> {{"@Username", username}};
+        var result = await _databaseService.QueryDb(sqlQuery, parameters);
+        return result.Count() > 0;
     }
 
-    private async Task InsertUser(string username, string email, string password)
+    private async Task<dynamic> InsertUser(string username, string email, string password)
     {
         var sqlQuery = @"
             INSERT INTO user (username, email, pw_hash)
@@ -156,6 +189,20 @@ public class HomeController : Controller
             { "@Email", email },
             { "@Password", password.GetHashCode() } // Not a safe way to hash passwords.
         };
-        await _databaseService.QueryDb(sqlQuery, parameters);
+        return await _databaseService.QueryDb(sqlQuery, parameters);
+    }
+
+    [HttpGet("/test")]
+    public async Task<IActionResult> Test()
+    {
+        HttpContext.Session.SetString("Name", "The Doctor");
+        return Ok("Test");
+    }
+    [HttpGet("/test2")]
+    public async Task<IActionResult> Test2()
+    {
+
+        var result = HttpContext.Session.GetString("Name");
+        return Ok(result);
     }
 }

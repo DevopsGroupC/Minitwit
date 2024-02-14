@@ -1,36 +1,34 @@
 using System.Reflection;
 using Microsoft.OpenApi.Models;
 using csharp_minitwit.Services;
+using Microsoft.AspNetCore.Authentication.Cookies;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Dependency injection
 builder.Services.AddSingleton<IDatabaseService, DatabaseService>();
-
+ 
 // Add services to the container.
+// builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+//     .AddCookie(options =>
+//     {
+//         options.ExpireTimeSpan = TimeSpan.FromMinutes(20);
+//         options.SlidingExpiration = true;
+//     });
+
+builder.Services.AddDistributedMemoryCache();
+
+builder.Services.AddSession(options =>
+{
+    options.Cookie.Name = ".minitwit.Session";
+    options.IdleTimeout = TimeSpan.FromSeconds(10);
+    options.Cookie.HttpOnly = true;
+    options.Cookie.IsEssential = true;
+});
+
 builder.Services.AddControllersWithViews();
 builder.Services.AddSwaggerGen(c =>
     {
-        //TODO: Replace empty strings.
-        // c.SwaggerDoc("v1", new OpenApiInfo
-        // {
-        //     Version = "v1",
-        //     Title = "minitwit API",
-        //     Description = "The API for the minitwit backend application.",
-        //     TermsOfService = new Uri(string.Empty),
-        //     Contact = new OpenApiContact
-        //     {
-        //         Name = string.Empty,
-        //         Email = string.Empty,
-        //         Url = new Uri(string.Empty),
-        //     },
-        //     License = new OpenApiLicense
-        //     {
-        //         Name = string.Empty,
-        //         Url = new Uri(string.Empty),
-        //     }
-        // });
-
         // Set the comments path for the Swagger JSON and UI.
         var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
         var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
@@ -56,7 +54,10 @@ app.UseStaticFiles();
 
 app.UseRouting();
 
+app.UseAuthentication();
 app.UseAuthorization();
+
+app.UseSession();
 
 app.MapControllerRoute(
     name: "default",

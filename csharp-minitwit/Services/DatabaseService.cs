@@ -9,12 +9,9 @@ namespace csharp_minitwit.Services;
 public class DatabaseService : IDatabaseService
 {
     private readonly string _connectionString;
-    private readonly int _perPage;
-
     public DatabaseService(IConfiguration configuration)
     {
         _connectionString = configuration.GetConnectionString("DefaultConnection")!;
-        _perPage = configuration.GetValue<int>("Constants:PerPage")!;
     }
 
     public async Task<IEnumerable<dynamic>> QueryDb(string sqlQuery, Dictionary<string, object> parameters)
