@@ -6,13 +6,13 @@
 
 <h2>
     @{
-        if (ContextAccessor.HttpContext.Request.RouteValues["endpoint"] == "public_timeline")
+        if (ContextAccessor.HttpContext.Request.RouteValues["endpoint"] == "publicTimeline")
         {
             <text>Public Timeline</text>
         }
-        else if ((string)ContextAccessor.HttpContext.Request.RouteValues["endpoint"] == "user_timeline")
+        else if ((string)ContextAccessor.HttpContext.Request.RouteValues["endpoint"] == "userTimeline")
         {
-            <text>@Model.ProfileUser.Username's Timeline</text>
+            <text>@Model.profileUser.username's Timeline</text>
         }
         else
         {
@@ -23,7 +23,7 @@
 
 @if (User.Identity.IsAuthenticated)
 {
-    @if (ContextAccessor.HttpContext.Request.RouteValues["endpoint"] == "user_timeline")
+    @if (ContextAccessor.HttpContext.Request.RouteValues["endpoint"] == "userTimeline")
     {
         <div class="followstatus">
             @using System.Security.Claims
@@ -46,7 +46,7 @@
             }
         </div>
     }
-    else if (ContextAccessor.HttpContext.Request.RouteValues["endpoint"] == "timeline")
+    else if (ContextAccessor.HttpContext.Request.RouteValues["endpoint"] == "Timeline")
     {
         <div class="twitbox">
             <h3>What's on your mind @User.Identity.Name?</h3>
@@ -59,7 +59,7 @@
 }
 
 <ul class="messages">
-    @foreach (var message in Model.Messages)
+    @foreach (var message in Model.messages)
     {
         <li>
             <img src="@Url.Action("Gravatar", new { size = 48, email = message.Email })" />

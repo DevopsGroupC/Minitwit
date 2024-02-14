@@ -31,7 +31,7 @@ public class HomeController : Controller
     /// <returns></returns>
     public async Task<IActionResult> Index()
     {
-        
+
         // TODO: Correctly check whether there is a logged user when register and login functionalities are working, and uncomment Redirect.
         if (!string.IsNullOrEmpty(HttpContext.Session.GetString("user_id")))
         {
@@ -55,7 +55,7 @@ public class HomeController : Controller
             ORDER BY message.pub_date DESC
             LIMIT @PerPage";
 
-        var dict = new Dictionary<string, object> {{"@PerPage", _perPage}};
+        var dict = new Dictionary<string, object> { { "@PerPage", _perPage } };
         var queryResult = await _databaseService.QueryDb<dynamic>(sqlQuery, dict);
 
         var messages = queryResult.Select(row =>
@@ -77,34 +77,41 @@ public class HomeController : Controller
 
         return View("PublicTimeline", messages);
     }
-    
+
     /// <summary>
     /// Logs the user in.
     /// </summary>
     [HttpGet("/login"), HttpPost("/login")]
     public async Task<IActionResult> Login([FromForm] LoginViewModel model)
     {
-        if (!string.IsNullOrEmpty(HttpContext.Session.GetString("user_id"))) {
+        if (!string.IsNullOrEmpty(HttpContext.Session.GetString("user_id")))
+        {
             return Redirect("/");
         }
         string error = null;
         if (Request.Method == "POST")
         {
             var query = "SELECT * FROM user WHERE username = @Username";
-            var dict = new Dictionary<string, object> {{"@Username", model.Username}};
+            var dict = new Dictionary<string, object> { { "@Username", model.Username } };
             var users = await _databaseService.QueryDb<UserModel>(query, dict);
             var user = users.FirstOrDefault();
 
-            if (!users.Any()) {
+            if (!users.Any())
+            {
                 error = "Invalid username";
-            } else if (model.Password.GetHashCode().ToString() != user.pw_hash) {
+            }
+            else if (model.Password.GetHashCode().ToString() != user.pw_hash)
+            {
                 error = "Invalid password";
-            } else {
+            }
+            else
+            {
                 HttpContext.Session.SetInt32("user_id", user.user_id);
                 return Redirect("/public");
             }
         }
-        if (!string.IsNullOrEmpty(error)) {
+        if (!string.IsNullOrEmpty(error))
+        {
             ModelState.AddModelError("", error); // Add error to entire form
         }
         return View("login");
@@ -170,7 +177,7 @@ public class HomeController : Controller
     private async Task<bool> IsUsernameTaken(string username)
     {
         var sqlQuery = "SELECT * FROM user WHERE username = @Username";
-        var parameters = new Dictionary<string, object> {{"@Username", username}};
+        var parameters = new Dictionary<string, object> { { "@Username", username } };
         var result = await _databaseService.QueryDb<dynamic>(sqlQuery, parameters);
         return result.Count() > 0;
     }
@@ -189,17 +196,61 @@ public class HomeController : Controller
         return await _databaseService.QueryDb<dynamic>(sqlQuery, parameters);
     }
 
-    [HttpGet("/test")]
-    public async Task<IActionResult> Test()
-    {
-        HttpContext.Session.SetString("Name", "The Doctor");
-        return Ok("Test");
-    }
-    [HttpGet("/test2")]
-    public async Task<IActionResult> Test2()
+    [HttpGet("/{username}")]
+    public async Task<IActionResult> UserTimeline(string username)
     {
 
-        var result = HttpContext.Session.GetString("Name");
-        return Ok(result);
+        string USER_ID = HttpContext.Session.GetString("user_id");
+
+
+        // Query for the profile user
+        var query = "SELECT * FROM user WHERE username = @Username";
+        var dict = new Dictionary<string, object> { { "@Username", username } };
+        var users = await _databaseService.QueryDb<UserModel>(query, dict);
+
+        UserModel profileUser = users.FirstOrDefault();
+
+        bool followed = false;
+        if (profileUser == null)
+        {
+            return NotFound();
+        }
+
+        if (!string.IsNullOrEmpty(USER_ID))
+        {// Check if the current user is following the profile user
+            var followCheckQuery = "SELECT 1 FROM follower WHERE who_id = @CurrentUserId AND whom_id = @ProfileUserId";
+            var followCheckParams = new Dictionary<string, object>
+        {
+            {"CurrentUserId", USER_ID},
+            {"ProfileUserId", profileUser.user_id}
+        };
+
+            var followCheck = await _databaseService.QueryDb<dynamic>(followCheckQuery, followCheckParams);
+            followed = followCheck.Any();
+        }
+
+        // Get messages for the user
+        var messagesQuery = @"
+            SELECT message.*, user.* FROM message
+            JOIN user ON user.user_id = message.author_id
+            WHERE user.user_id = @UserId
+            ORDER BY message.pub_date DESC LIMIT @Limit";
+        var messages = await _databaseService.QueryDb<MessageModel>(messagesQuery, new Dictionary<string, object>
+        {
+            {"UserId", profileUser.user_id},
+            {"Limit", 50} // Assuming PER_PAGE is 50, replace with your actual constant
+        });
+
+        // Assuming you have a ViewModel or a way to pass data to your view
+        var viewModel = new UserTimelineViewModel
+        {
+            profileUser = profileUser,
+            messages = messages.ToList(),
+            followed = followed
+        };
+
+        return View("Timeline", viewModel);
+
+
     }
 }
