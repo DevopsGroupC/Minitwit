@@ -113,6 +113,7 @@ public class HomeController : Controller
     /// Logs the user out.
     /// </summary>
     /// <returns></returns>
+    [HttpGet("/logout")]
     public IActionResult Logout()
     {
         HttpContext.Session.Remove("user_id");
