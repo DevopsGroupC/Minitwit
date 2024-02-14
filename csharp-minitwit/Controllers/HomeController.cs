@@ -131,7 +131,7 @@ public class HomeController : Controller
     /// Registers a new message for the user.
     /// </summary>
     [HttpPost("/add_message")]
-    public async Task<IActionResult> AddMessage ([FromForm] MessageModel model)
+    public async Task<IActionResult> AddMessage ([FromQuery] MessageModel model)
     {
          if (string.IsNullOrEmpty(HttpContext.Session.GetString("user_id"))) {
             return Unauthorized(); 
@@ -142,7 +142,7 @@ public class HomeController : Controller
         
         var parameters = new Dictionary<string, object> {
             {"@Author_id", HttpContext.Session.GetString("user_id")!}, 
-            {"@Text", Request.Form["text"]},
+            {"@Text", model.Text},
             {"@Pub_date", (int)DateTimeOffset.Now.ToUnixTimeSeconds()}, 
             {"@Flagged", 0}
         };
