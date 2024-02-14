@@ -198,18 +198,4 @@ public class HomeController : Controller
         };
         return await _databaseService.QueryDb<dynamic>(sqlQuery, parameters);
     }
-
-    [HttpGet("/test")]
-    public async Task<IActionResult> Test()
-    {
-        HttpContext.Session.SetString("Name", "The Doctor");
-        return Ok("Test");
-    }
-    [HttpGet("/test2")]
-    public async Task<IActionResult> Test2()
-    {
-
-        var result = HttpContext.Session.GetString("Name");
-        return Ok(result);
-    }
 }
