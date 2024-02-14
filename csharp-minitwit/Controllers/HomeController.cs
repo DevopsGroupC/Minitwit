@@ -110,6 +110,16 @@ public class HomeController : Controller
         return View("login");
     }
 
+    /// <summary>
+    /// Logs the user out.
+    /// </summary>
+    /// <returns></returns>
+    public IActionResult Logout()
+    {
+        HttpContext.Session.Remove("user_id");
+        return Redirect("/public");
+    }
+
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
     public IActionResult Error()
     {
