@@ -12,15 +12,13 @@ namespace csharp_minitwit.Controllers;
 
 public class HomeController : Controller
 {
-    private readonly ILogger<HomeController> _logger;
     private readonly IDatabaseService _databaseService;
     private readonly IConfiguration _configuration;
     private readonly string _perPage;
 
-    public HomeController(ILogger<HomeController> logger, IDatabaseService databaseService, IConfiguration configuration)
+    public HomeController( IDatabaseService databaseService, IConfiguration configuration)
     {
         _databaseService = databaseService;
-        _logger = logger;
         _configuration = configuration;
         _perPage = configuration.GetValue<string>("Constants:PerPage")!;
     }
@@ -29,14 +27,60 @@ public class HomeController : Controller
     /// This timeline shows the user's messages as well as all the messages of followed users.
     /// </summary>
     /// <returns></returns>
-    public async Task<IActionResult> Index()
+    public async Task<IActionResult>  Timeline()
     {
-        // TODO: Correctly check whether there is a logged user when register and login functionalities are working, and uncomment Redirect.
-        if (!string.IsNullOrEmpty(HttpContext.Session.GetString("user_id")))
+        var userId = HttpContext.Session.GetInt32("user_id");
+
+        if (!userId.HasValue)
         {
             return Redirect("/public");
         }
-        return View();
+
+       var sqlQuery = @"
+            SELECT message.*, user.* 
+            FROM message 
+            JOIN user ON message.author_id = user.user_id 
+            WHERE message.flagged = 0 
+            AND (user.user_id = @UserId OR user.user_id IN (
+                SELECT whom_id 
+                FROM follower
+                WHERE who_id = @UserId
+            ))
+            ORDER BY message.pub_date DESC 
+            LIMIT @Limit";
+
+        var parameters = new Dictionary<string, object>
+        {
+            { "@UserId", userId },
+            { "@Limit", 10 } // Assuming you want to limit to 10 posts
+        };
+
+        var queryResult = await _databaseService.QueryDb<dynamic>(sqlQuery, parameters);
+
+        var messages = queryResult.Select(row =>
+                    {
+                        var dict = (IDictionary<string, object>)row;
+                        return new MessageModel
+                        {
+                            MessageId = (long)dict["message_id"],
+                            AuthorId = (long)dict["author_id"],
+                            Text = (string)dict["text"],
+                            PubDate = (long)dict["pub_date"],
+                            Flagged = (long)dict["flagged"],
+                            UserId = (long)dict["user_id"],
+                            Username = (string)dict["username"],
+                            Email = (string)dict["email"],
+                            PwHash = (string)dict["pw_hash"]
+                        };
+                    }).ToList();
+
+        var viewModel = new UserTimelineViewModel
+        {
+            currentUserId = userId,
+            messages = messages,
+        };
+
+        return View("Timeline", viewModel);
     }
 
 
@@ -54,7 +98,7 @@ public class HomeController : Controller
             ORDER BY message.pub_date DESC
             LIMIT @PerPage";
 
-        var dict = new Dictionary<string, object> {{"@PerPage", _perPage}};
+        var dict = new Dictionary<string, object> { { "@PerPage", _perPage } };
         var queryResult = await _databaseService.QueryDb<dynamic>(sqlQuery, dict);
 
         var messages = queryResult.Select(row =>
@@ -74,16 +118,22 @@ public class HomeController : Controller
         };
     }).ToList();
 
-        return View("PublicTimeline", messages);
+    var viewModel = new UserTimelineViewModel
+        {
+            messages = messages,
+        };
+
+        return View("Timeline", viewModel);
     }
-    
+
     /// <summary>
     /// Logs the user in.
     /// </summary>
     [HttpGet("/login"), HttpPost("/login")]
     public async Task<IActionResult> Login([FromForm] LoginViewModel model)
     {
-        if (!string.IsNullOrEmpty(HttpContext.Session.GetString("user_id"))) {
+        if (!string.IsNullOrEmpty(HttpContext.Session.GetString("user_id")))
+        {
             return Redirect("/");
         }
         string error = "";
@@ -94,16 +144,22 @@ public class HomeController : Controller
             var users = await _databaseService.QueryDb<UserModel>(query, dict);
             var user = users.FirstOrDefault();
 
-            if (!users.Any()) {
+            if (!users.Any())
+            {
                 error = "Invalid username";
             } else if (model.Password?.GetHashCode().ToString() != user?.pw_hash) {
                 error = "Invalid password";
-            } else {
-                HttpContext.Session.SetInt32("user_id", user!.user_id);
-                return Redirect("/public");
+            }
+            else
+            {
+                Console.WriteLine("User logged in with id: " + user.user_id + " and username: " + user.username);
+                HttpContext.Session.SetInt32("user_id", user.user_id);
+                HttpContext.Session.SetString("username", user.username);
+                return Redirect("/");
             }
         }
-        if (!string.IsNullOrEmpty(error)) {
+        if (!string.IsNullOrEmpty(error))
+        {
             ModelState.AddModelError("", error); // Add error to entire form
         }
         return View("login");
@@ -180,7 +236,7 @@ public class HomeController : Controller
     private async Task<bool> IsUsernameTaken(string username)
     {
         var sqlQuery = "SELECT * FROM user WHERE username = @Username";
-        var parameters = new Dictionary<string, object> {{"@Username", username}};
+        var parameters = new Dictionary<string, object> { { "@Username", username } };
         var result = await _databaseService.QueryDb<dynamic>(sqlQuery, parameters);
         return result.Count() > 0;
     }
@@ -198,4 +254,81 @@ public class HomeController : Controller
         };
         return await _databaseService.QueryDb<dynamic>(sqlQuery, parameters);
     }
+
+    [HttpGet("/{username}")]
+    public async Task<IActionResult> UserTimeline(string username)
+    {
+
+        // Query for the profile user
+        var query = "SELECT * FROM user WHERE username = @Username";
+        var dict = new Dictionary<string, object> { { "@Username", username } };
+        var users = await _databaseService.QueryDb<UserModel>(query, dict);
+
+        UserModel? profileUser = users.FirstOrDefault();
+
+        bool followed = false;
+
+        if (profileUser == null)
+        {
+            return NotFound();
+        }
+
+        var currentUserId = HttpContext.Session.GetInt32("user_id");
+
+        Console.WriteLine("Current user id: " + currentUserId);
+
+        if (currentUserId.HasValue)
+        {// Check if the current user is following the profile user
+            var followCheckQuery = "SELECT 1 FROM follower WHERE who_id = @CurrentUserId AND whom_id = @ProfileUserId";
+            var followCheckParams = new Dictionary<string, object>
+        {
+            {"CurrentUserId", currentUserId},
+            {"ProfileUserId", profileUser.user_id}
+        };
+
+            var followCheck = await _databaseService.QueryDb<dynamic>(followCheckQuery, followCheckParams);
+            followed = followCheck.Any();
+        }
+
+        // Get messages for the user
+        var messagesQuery = @"
+            SELECT message.*, user.* FROM message
+            JOIN user ON user.user_id = message.author_id
+            WHERE user.user_id = @UserId
+            ORDER BY message.pub_date DESC LIMIT @Limit";
+        var queryResult = await _databaseService.QueryDb<dynamic>(messagesQuery, new Dictionary<string, object>
+        {
+            {"UserId", profileUser.user_id},
+            {"Limit", 50} // Assuming PER_PAGE is 50, replace with your actual constant
+        });
+        // needs to be converted to a new method because it is used twice
+        var messages = queryResult.Select(row =>
+            {
+                var dict = (IDictionary<string, object>)row;
+                return new MessageModel
+                {
+                    MessageId = (long)dict["message_id"],
+                    AuthorId = (long)dict["author_id"],
+                    Text = (string)dict["text"],
+                    PubDate = (long)dict["pub_date"],
+                    Flagged = (long)dict["flagged"],
+                    UserId = (long)dict["user_id"],
+                    Username = (string)dict["username"],
+                    Email = (string)dict["email"],
+                    PwHash = (string)dict["pw_hash"]
+                };
+            }).ToList();
+
+
+        var viewModel = new UserTimelineViewModel
+        {
+            currentUserId = currentUserId,
+            profileUser = profileUser,
+            messages = messages.ToList(),
+            followed = followed
+        };
+
+        return View("Timeline", viewModel);
+    }
+
 }
