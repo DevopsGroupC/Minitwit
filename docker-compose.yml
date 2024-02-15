@@ -3,7 +3,7 @@ version: '3.8'
 services:
   minitwit:
     environment:
-      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_ENVIRONMENT=Development
       - ConnectionStrings__DefaultConnection=Data Source=database/minitwit.db # connection string to use SQLite database
 
     build:
