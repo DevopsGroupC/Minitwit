@@ -46,3 +46,18 @@ button.accept-policy {
   white-space: nowrap;
   line-height: 60px;
 }
+
+.unfollow-link {
+  background: none!important;
+  border: none;
+  padding: 0!important;
+  /*optional:*/
+  font-family: arial, sans-serif; /* Make it look like a link */
+  color: #069;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.inline-form {
+  display: inline;
+}

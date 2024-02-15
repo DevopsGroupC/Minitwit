@@ -196,7 +196,7 @@ public class HomeController : Controller
     [HttpGet("/logout")]
     public IActionResult Logout()
     {
-        HttpContext.Session.Remove("user_id");
+        HttpContext.Session.Clear();
         return Redirect("/public");
     }
 
@@ -351,6 +351,71 @@ public class HomeController : Controller
         };
 
         return View("Timeline", viewModel);
+    }
+
+    [HttpPost]
+    [Route("/follow")]
+    public async Task<IActionResult> FollowUser(string username)
+    {
+         // Query for the profile user
+        var query = "SELECT * FROM user WHERE username = @Username";
+        var dict = new Dictionary<string, object> { { "@Username", username } };
+        var users = await _databaseService.QueryDb<UserModel>(query, dict);
+
+        UserModel? profileUser = users.FirstOrDefault();
+
+        if (profileUser == null)
+        {
+            return NotFound();
+        }
+       
+
+        var currentUserId = HttpContext.Session.GetInt32("user_id");
+
+        var parameters = new Dictionary<string, object>
+        {
+            { "@WhoId", currentUserId },
+            { "@WhomId", profileUser.user_id }
+        };
+
+        var sqlQuery = "INSERT INTO follower (who_id, whom_id) VALUES (@WhoId, @WhomId)";
+
+        await _databaseService.QueryDb<int>(sqlQuery, parameters);
+
+        TempData["Message"] = $"You are now following {username}";
+        return RedirectToAction("UserTimeline", new { username = username });
+    }
+
+    [HttpPost]
+    [Route("/unfollow")]
+    public async Task<IActionResult> UnfollowUser(string username)
+    {
+         // Query for the profile user
+        var query = "SELECT * FROM user WHERE username = @Username";
+        var dict = new Dictionary<string, object> { { "@Username", username } };
+        var users = await _databaseService.QueryDb<UserModel>(query, dict);
+
+        UserModel? profileUser = users.FirstOrDefault();
+
+        if (profileUser == null)
+        {
+            return NotFound();
+        }
+
+        var currentUserId = HttpContext.Session.GetInt32("user_id");
+
+         var parameters = new Dictionary<string, object>
+        {
+            { "@WhoId", currentUserId },
+            { "@WhomId", profileUser.user_id }
+        };
+
+        var sqlQuery = "DELETE FROM follower WHERE who_id = @WhoId AND whom_id = @WhomId";
+
+        await _databaseService.QueryDb<int>(sqlQuery, parameters);
+
+        TempData["Message"] = $"You are no longer following {username}";
+        return RedirectToAction("UserTimeline", new { username = username });
     }
 
 }
