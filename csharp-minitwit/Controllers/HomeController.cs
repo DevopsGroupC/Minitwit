@@ -67,10 +67,8 @@ public class HomeController : Controller
                             Text = (string)dict["text"],
                             PubDate = (long)dict["pub_date"],
                             Flagged = (long)dict["flagged"],
-                            UserId = (long)dict["user_id"],
                             Username = (string)dict["username"],
                             Email = (string)dict["email"],
-                            PwHash = (string)dict["pw_hash"]
                         };
                     }).ToList();
 
@@ -111,10 +109,8 @@ public class HomeController : Controller
             Text = (string)dict["text"],
             PubDate = (long)dict["pub_date"],
             Flagged = (long)dict["flagged"],
-            UserId = (long)dict["user_id"],
             Username = (string)dict["username"],
             Email = (string)dict["email"],
-            PwHash = (string)dict["pw_hash"]
         };
     }).ToList();
 
@@ -125,6 +121,34 @@ public class HomeController : Controller
 
         return View("Timeline", viewModel);
     }
+    
+
+    /// <summary>
+    /// Registers a new message for the user.
+    /// </summary>
+    [HttpPost("/add_message")]
+    public async Task<IActionResult> AddMessage ([FromForm] MessageModel model)
+    {
+         if (string.IsNullOrEmpty(HttpContext.Session.GetString("username"))) {
+            return Unauthorized(); 
+        } 
+        if (!string.IsNullOrEmpty(model.Text)){
+            var query = @"INSERT INTO message (author_id, text, pub_date, flagged)  
+                            VALUES (@Author_id, @Text, @Pub_date, @Flagged)";
+        
+        var parameters = new Dictionary<string, object> {
+            {"@Author_id", HttpContext.Session.GetInt32("user_id")}, 
+            {"@Text", model.Text},
+            {"@Pub_date", (long)DateTimeOffset.Now.ToUnixTimeSeconds()}, 
+            {"@Flagged", 0}
+        };
+        await _databaseService.QueryDb<dynamic>(query, parameters);
+        }
+        return Redirect("/");
+    }
+
+
+
 
     /// <summary>
     /// Logs the user in.
@@ -312,10 +336,8 @@ public class HomeController : Controller
                     Text = (string)dict["text"],
                     PubDate = (long)dict["pub_date"],
                     Flagged = (long)dict["flagged"],
-                    UserId = (long)dict["user_id"],
                     Username = (string)dict["username"],
                     Email = (string)dict["email"],
-                    PwHash = (string)dict["pw_hash"]
                 };
             }).ToList();
 
