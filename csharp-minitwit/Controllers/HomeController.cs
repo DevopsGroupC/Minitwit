@@ -136,20 +136,18 @@ public class HomeController : Controller
         {
             return Redirect("/");
         }
-        string error = null;
-        if (Request.Method == "POST")
+        string error = "";
+        if (Request.Method == "POST" && ModelState.IsValid)
         {
             var query = "SELECT * FROM user WHERE username = @Username";
-            var dict = new Dictionary<string, object> { { "@Username", model.Username } };
+            var dict = new Dictionary<string, object> {{"@Username", model.Username!}};
             var users = await _databaseService.QueryDb<UserModel>(query, dict);
             var user = users.FirstOrDefault();
 
             if (!users.Any())
             {
                 error = "Invalid username";
-            }
-            else if (model.Password.GetHashCode().ToString() != user.pw_hash)
-            {
+            } else if (model.Password?.GetHashCode().ToString() != user?.pw_hash) {
                 error = "Invalid password";
             }
             else
@@ -165,6 +163,17 @@ public class HomeController : Controller
             ModelState.AddModelError("", error); // Add error to entire form
         }
         return View("login");
+    }
+
+    /// <summary>
+    /// Logs the user out.
+    /// </summary>
+    /// <returns></returns>
+    [HttpGet("/logout")]
+    public IActionResult Logout()
+    {
+        HttpContext.Session.Remove("user_id");
+        return Redirect("/public");
     }
 
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
