@@ -43,13 +43,19 @@
             else if (Model.followed)
             {
                 <text>You are currently following this user.
-                    <a class="unfollow" href="@Url.Action("UnfollowUser", new { username = Model.profileUser.username })">Unfollow user</a>.
+                    <form asp-action="UnfollowUser" method="post" class="inline-form">
+                    <input type="hidden" name="username" value="@Model.profileUser.username" />
+                     <button type="submit" class="unfollow-link">Unfollow user</button>
+                    </form>
                 </text>
             }
             else
             {
                 <text>You are not yet following this user.
-                    <a class="follow" href="@Url.Action("FollowUser", new { username = Model.profileUser.username })">Follow user</a>.
+                     <form asp-action="FollowUser" method="post" class="inline-form">
+                    <input type="hidden" name="username" value="@Model.profileUser.username" />
+                     <button type="submit" class="unfollow-link">Follow user</button>
+                    </form>
                 </text>
             }
         </div>

@@ -72,6 +72,6 @@ app.UseSession();
 
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Home}/{action=Timeline}/{id?}");
+    pattern: "{controller=Home}/{id?}/{action=Timeline}/");
 
 app.Run();
