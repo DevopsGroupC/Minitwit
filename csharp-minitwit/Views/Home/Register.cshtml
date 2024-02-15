@@ -1,0 +1,30 @@
+@model csharp_minitwit.Models.RegisterViewModel
+
+@{
+    Layout = "~/Views/Home/Layout.cshtml";
+    ViewData["Title"] = "Sign Up";
+}
+
+<h2>Sign Up</h2>
+@if (ViewData.ModelState.Any(ms => ms.Value.Errors.Count > 0))
+{
+    var firstError = ViewData.ModelState.SelectMany(ms => ms.Value.Errors).Select(e => e.ErrorMessage).FirstOrDefault();
+    if (!string.IsNullOrEmpty(firstError))
+    {
+        <div class="error"><strong>Error:</strong> @firstError</div>
+    }
+}
+<form asp-action="Register" method="post">
+    <dl>
+        <dt>Username:</dt>
+        <dd><input asp-for="Username" class="form-control"></dd>
+        <dt>E-Mail:</dt>
+        <dd><input asp-for="Email" class="form-control"></dd>
+        <dt>Password:</dt>
+        <dd><input asp-for="Password" class="form-control" type="password"></dd>
+        <dt>Password <small>(repeat)</small>:</dt>
+        <dd><input asp-for="Password2" class="form-control" type="password"></dd>
+    </dl>
+    <div class="actions"><button type="submit" class="btn btn-primary">Sign Up</button></div>
+</form>
+

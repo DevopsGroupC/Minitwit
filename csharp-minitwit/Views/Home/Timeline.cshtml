@@ -1,0 +1,96 @@
+@model csharp_minitwit.Models.UserTimelineViewModel;
+@using csharp_minitwit.Utils;
+@inject IHttpContextAccessor _httpContext
+
+@{
+    Layout = "~/Views/Home/Layout.cshtml";
+    ViewData["Title"] = "Timeline";
+    var actionName = ViewContext.RouteData.Values["action"].ToString();
+    var userId = _httpContext.HttpContext.Session.GetInt32("user_id");
+    var username = _httpContext.HttpContext.Session.GetString("username");
+}
+
+<h2>
+    
+    @{
+        if (actionName== "PublicTimeline")
+        {
+            <text>Public Timeline</text>
+        }
+        else if (actionName == "UserTimeline")
+        {
+            <text>@Model.profileUser.username's Timeline</text>
+        }
+        else
+        {
+            <text>My Timeline</text>
+        }
+    }
+</h2>
+
+
+@if (Model.currentUserId.HasValue)
+{
+    @if (actionName == "UserTimeline")
+    {
+        <div class="followstatus">
+            @using System.Security.Claims
+
+            @if (Model.currentUserId == Model.profileUser.user_id)
+            {
+                <text>This is you!</text>
+            }
+            else if (Model.followed)
+            {
+                <text>You are currently following this user.
+                    <form asp-action="UnfollowUser" method="post" class="inline-form">
+                    <input type="hidden" name="username" value="@Model.profileUser.username" />
+                     <button type="submit" class="unfollow-link">Unfollow user</button>
+                    </form>
+                </text>
+            }
+            else
+            {
+                <text>You are not yet following this user.
+                     <form asp-action="FollowUser" method="post" class="inline-form">
+                    <input type="hidden" name="username" value="@Model.profileUser.username" />
+                     <button type="submit" class="unfollow-link">Follow user</button>
+                    </form>
+                </text>
+            }
+        </div>
+    }
+    else if (actionName == "Timeline")
+    {
+        <div class="twitbox">
+            <h3>What's on your mind @username </h3>
+            <form asp-action="AddMessage" method="post">
+                <p><input type="text" name="text" size="60" /><input type="submit" value="Share" /></p>
+            </form>
+        </div>
+}}
+
+<ul class="messages">
+    @if (Model.messages.Any())
+    {
+        @foreach (var message in Model.messages)
+        {
+            var gravatarUrl = GravatarHelper.GetGravatarUrl(message.Email, 48);
+            <li>
+                <img src="@gravatarUrl" alt="Gravatar">
+                <p>
+                    <strong><a href="@Url.Action("UserTimeline", new { username = message.Username })">@message.Username</a></strong>
+                    @message.Text
+                    <small>&mdash; @DateTimeOffset.FromUnixTimeSeconds(message.PubDate).ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss")</small>
+                </p>
+            </li>
+        }
+    }
+    else
+    {
+        <li><em>There's no message so far.</em></li>
+    }
+
+</ul>
+
+  
