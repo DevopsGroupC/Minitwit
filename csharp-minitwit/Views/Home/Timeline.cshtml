@@ -59,12 +59,10 @@
         <div class="twitbox">
             <h3>What's on your mind @username </h3>
             <form asp-action="AddMessage" method="post">
-                <p><input type="text" name="text" size="60" /><!--
-                    --><input type="submit" value="Share" /></p>
+                <p><input type="text" name="text" size="60" /><input type="submit" value="Share" /></p>
             </form>
         </div>
-    }
-}
+}}
 
 <ul class="messages">
     @if (Model.messages.Any())
