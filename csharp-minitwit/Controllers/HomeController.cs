@@ -6,6 +6,7 @@ using csharp_minitwit.Services;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Identity;
 using System.Net.Http;
 
 namespace csharp_minitwit.Controllers;
@@ -15,12 +16,14 @@ public class HomeController : Controller
     private readonly IDatabaseService _databaseService;
     private readonly IConfiguration _configuration;
     private readonly string _perPage;
+    private readonly PasswordHasher<UserModel> _passwordHasher;
 
     public HomeController( IDatabaseService databaseService, IConfiguration configuration)
     {
         _databaseService = databaseService;
         _configuration = configuration;
         _perPage = configuration.GetValue<string>("Constants:PerPage")!;
+        _passwordHasher = new PasswordHasher<UserModel>();
     }
     /// <summary>
     /// Shows a users timeline or if no user is logged in it will redirect to the public timeline.
@@ -168,10 +171,10 @@ public class HomeController : Controller
             var users = await _databaseService.QueryDb<UserModel>(query, dict);
             var user = users.FirstOrDefault();
 
-            if (!users.Any())
-            {
+            if (user == null) {
                 error = "Invalid username";
-            } else if (model.Password?.GetHashCode().ToString() != user?.pw_hash) {
+            } else if (model.Password == null 
+            || _passwordHasher.VerifyHashedPassword(user, user.pw_hash, model.Password) == PasswordVerificationResult.Failed ) {
                 error = "Invalid password";
             }
             else
@@ -246,9 +249,7 @@ public class HomeController : Controller
             else
             {
                 //Insert user into database
-                Console.WriteLine("Attempting to insert user into database");
                 var result = await InsertUser(model.Username, model.Email, model.Password);
-                Console.WriteLine("AFinished inserting user into database");
                 TempData["SuccessMessage"] = "You were successfully registered and can login now";
                 return RedirectToAction("Login");
             }
@@ -270,11 +271,14 @@ public class HomeController : Controller
         var sqlQuery = @"
             INSERT INTO user (username, email, pw_hash)
             VALUES (@Username, @Email, @Password)";
+
+        var hashedPassword = _passwordHasher.HashPassword(new UserModel(), password);
+
         var parameters = new Dictionary<string, object>
         {
             { "@Username", username },
             { "@Email", email },
-            { "@Password", password.GetHashCode() } // Not a safe way to hash passwords.
+            { "@Password", hashedPassword }
         };
         return await _databaseService.QueryDb<dynamic>(sqlQuery, parameters);
     }
@@ -418,4 +422,9 @@ public class HomeController : Controller
         return RedirectToAction("UserTimeline", new { username = username });
     }
 
+
+    private bool IsPasswordValid(UserModel user, string? password)
+    {
+        return password != null && _passwordHasher.VerifyHashedPassword(user, user.pw_hash, password) == PasswordVerificationResult.Success;
+    }
 }
