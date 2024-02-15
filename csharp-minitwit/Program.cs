@@ -18,6 +18,7 @@ builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 //     });
 
 builder.Services.AddDistributedMemoryCache();
+builder.WebHost.UseUrls("http://*:8080");
 
 builder.Services.Configure<CookiePolicyOptions>(options =>
 {

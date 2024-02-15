@@ -2,24 +2,28 @@ version: '3.8'
 
 services:
   minitwit:
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ConnectionStrings__DefaultConnection=Data Source=database/minitwit.db # connection string to use SQLite database
+
     build:
       context: .
       dockerfile: ./csharp-minitwit/Dockerfile # assuming your Dockerfile for the MVC project is in the root directory
     ports:
-      - "5262:5262"
-    # depends_on:
-    #   - sqlite-db
-    # environment:
-    #   - ConnectionStrings__DefaultConnection=Data Source=database/minitwit.db # connection string to use SQLite database
+      - "8080:8080"
+    depends_on:
+      - sqlite-db
 
-#   sqlite-db:
-#     image: "jitesoft/sqlite:latest" # use the official SQLite Docker image from Bitnami
-#     volumes:
-#       - ./Databases:/jitesoft/sqlite # mount the local ./Databases directory to /bitnami/sqlite in the container
-#     environment:
-#       - ALLOW_EMPTY_PASSWORD=yes # allow SQLite to run without a password
-#     networks:
-#       - minitwit_network
+  sqlite-db:
+    image: "jitesoft/sqlite:latest" # use the official SQLite Docker image from Bitnami
+    volumes:
+      - ./Databases:/jitesoft/sqlite # mount the local ./Databases directory to /bitnami/sqlite in the container
+    environment:
+      - ALLOW_EMPTY_PASSWORD=yes # allow SQLite to run without a password
+    networks:
+      - minitwit_network
 
-# networks:
-#   minitwit_network: # define a custom bridge network
+networks:
+  minitwit_network:
+    external:
+      name: minitwit-network

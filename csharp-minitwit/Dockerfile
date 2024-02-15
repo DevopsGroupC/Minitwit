@@ -12,8 +12,8 @@ RUN dotnet publish -a $TARGETARCH --no-restore -o /app
 
 # final stage/image
 FROM mcr.microsoft.com/dotnet/aspnet:8.0
-ENV ASPNETCORE_HTTP_PORTS=http://+:5262
-EXPOSE 5262
+
 WORKDIR /app
 COPY --from=build /app .
+
 ENTRYPOINT ["./"]
