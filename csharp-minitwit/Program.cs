@@ -19,6 +19,15 @@ builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 
 builder.Services.AddDistributedMemoryCache();
 
+builder.Services.Configure<CookiePolicyOptions>(options =>
+{
+    // This lambda determines whether user consent for non-essential 
+    // cookies is needed for a given request.
+    options.CheckConsentNeeded = context => true;
+
+    options.MinimumSameSitePolicy = SameSiteMode.None;
+});
+
 builder.Services.AddSession(options =>
 {
     options.Cookie.Name = ".minitwit.Session";
@@ -58,10 +67,11 @@ app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
 
+app.UseCookiePolicy();
 app.UseSession();
 
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Home}/{action=Index}/{id?}");
+    pattern: "{controller=Home}/{action=Timeline}/{id?}");
 
 app.Run();

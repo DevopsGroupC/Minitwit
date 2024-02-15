@@ -12,15 +12,13 @@ namespace csharp_minitwit.Controllers;
 
 public class HomeController : Controller
 {
-    private readonly ILogger<HomeController> _logger;
     private readonly IDatabaseService _databaseService;
     private readonly IConfiguration _configuration;
     private readonly string _perPage;
 
-    public HomeController(ILogger<HomeController> logger, IDatabaseService databaseService, IConfiguration configuration)
+    public HomeController( IDatabaseService databaseService, IConfiguration configuration)
     {
         _databaseService = databaseService;
-        _logger = logger;
         _configuration = configuration;
         _perPage = configuration.GetValue<string>("Constants:PerPage")!;
     }
@@ -29,15 +27,60 @@ public class HomeController : Controller
     /// This timeline shows the user's messages as well as all the messages of followed users.
     /// </summary>
     /// <returns></returns>
-    public async Task<IActionResult> Index()
+    public async Task<IActionResult>  Timeline()
     {
+        var userId = HttpContext.Session.GetInt32("user_id");
 
-        // TODO: Correctly check whether there is a logged user when register and login functionalities are working, and uncomment Redirect.
-        if (!string.IsNullOrEmpty(HttpContext.Session.GetString("user_id")))
+        if (!userId.HasValue)
         {
             return Redirect("/public");
         }
-        return View();
+
+       var sqlQuery = @"
+            SELECT message.*, user.* 
+            FROM message 
+            JOIN user ON message.author_id = user.user_id 
+            WHERE message.flagged = 0 
+            AND (user.user_id = @UserId OR user.user_id IN (
+                SELECT whom_id 
+                FROM follower
+                WHERE who_id = @UserId
+            ))
+            ORDER BY message.pub_date DESC 
+            LIMIT @Limit";
+
+        var parameters = new Dictionary<string, object>
+        {
+            { "@UserId", userId },
+            { "@Limit", 10 } // Assuming you want to limit to 10 posts
+        };
+
+        var queryResult = await _databaseService.QueryDb<dynamic>(sqlQuery, parameters);
+
+        var messages = queryResult.Select(row =>
+                    {
+                        var dict = (IDictionary<string, object>)row;
+                        return new MessageModel
+                        {
+                            MessageId = (long)dict["message_id"],
+                            AuthorId = (long)dict["author_id"],
+                            Text = (string)dict["text"],
+                            PubDate = (long)dict["pub_date"],
+                            Flagged = (long)dict["flagged"],
+                            UserId = (long)dict["user_id"],
+                            Username = (string)dict["username"],
+                            Email = (string)dict["email"],
+                            PwHash = (string)dict["pw_hash"]
+                        };
+                    }).ToList();
+
+        var viewModel = new UserTimelineViewModel
+        {
+            currentUserId = userId,
+            messages = messages,
+        };
+
+        return View("Timeline", viewModel);
     }
 
 
@@ -75,7 +118,12 @@ public class HomeController : Controller
         };
     }).ToList();
 
-        return View("PublicTimeline", messages);
+    var viewModel = new UserTimelineViewModel
+        {
+            messages = messages,
+        };
+
+        return View("Timeline", viewModel);
     }
 
     /// <summary>
@@ -106,9 +154,10 @@ public class HomeController : Controller
             }
             else
             {
-                Console.WriteLine("User logged in with id: " + user.user_id);
+                Console.WriteLine("User logged in with id: " + user.user_id + " and username: " + user.username);
                 HttpContext.Session.SetInt32("user_id", user.user_id);
-                return Redirect("/public");
+                HttpContext.Session.SetString("username", user.username);
+                return Redirect("/");
             }
         }
         if (!string.IsNullOrEmpty(error))
@@ -262,7 +311,6 @@ public class HomeController : Controller
             }).ToList();
 
 
-        // Assuming you have a ViewModel or a way to pass data to your view
         var viewModel = new UserTimelineViewModel
         {
             currentUserId = currentUserId,
