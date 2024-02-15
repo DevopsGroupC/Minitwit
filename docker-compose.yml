@@ -3,7 +3,7 @@ version: '3.8'
 services:
   minitwit:
     environment:
-      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_ENVIRONMENT=Development
       - ConnectionStrings__DefaultConnection=Data Source=database/minitwit.db # connection string to use SQLite database
 
     build:
@@ -15,13 +15,13 @@ services:
       - sqlite-db
 
   sqlite-db:
-    image: "jitesoft/sqlite:latest" # use the official SQLite Docker image from Bitnami
-    volumes:
-      - ./Databases:/jitesoft/sqlite # mount the local ./Databases directory to /bitnami/sqlite in the container
+    build:
+      context: .
+      dockerfile: ./database/Dockerfile
+    # volumes:
+    #   - ./Databases:/app/data # Mount the local ./Databases directory to /app/data in the SQLite container
     environment:
-      - ALLOW_EMPTY_PASSWORD=yes # allow SQLite to run without a password
-    networks:
-      - minitwit_network
+      - ALLOW_EMPTY_PASSWORD=yes # Allow SQLite to run without a password
 
 networks:
   minitwit_network:
