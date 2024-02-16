@@ -108,6 +108,11 @@ Run using `dotnet`:
 ```sh
 dotnet run
 ```
+Run using `docker`:
+```sh
+docker build -t csharp-minitwit .
+docker run -p 8080:8080 csharp-minitwit
+```
 At this point, the application can be accessed using the link provided in the terminal (http://localhost:8080). Furthermore, API documentation can be accessed at http://localhost:8080/swagger.
 
 #### csharp-minitwit tests
