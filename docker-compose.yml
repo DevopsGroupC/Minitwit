@@ -1,29 +1,13 @@
-version: '3.8'
+version: '3'
 
 services:
   minitwit:
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
-      - ConnectionStrings__DefaultConnection=Data Source=database/minitwit.db # connection string to use SQLite database
+      # - ConnectionStrings__DefaultConnection=Data Source=./app/minitwit.db # connection string to use SQLite database
 
     build:
       context: .
-      dockerfile: ./csharp-minitwit/Dockerfile # assuming your Dockerfile for the MVC project is in the root directory
+      dockerfile: ./csharp-minitwit/Dockerfile
     ports:
       - "8080:8080"
-    depends_on:
-      - sqlite-db
-
-  sqlite-db:
-    build:
-      context: .
-      dockerfile: ./database/Dockerfile
-    # volumes:
-    #   - ./Databases:/app/data # Mount the local ./Databases directory to /app/data in the SQLite container
-    environment:
-      - ALLOW_EMPTY_PASSWORD=yes # Allow SQLite to run without a password
-
-networks:
-  minitwit_network:
-    external:
-      name: minitwit-network
