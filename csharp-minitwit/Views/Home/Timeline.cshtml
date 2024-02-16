@@ -1,4 +1,4 @@
-@model csharp_minitwit.Models.UserTimelineViewModel;
+@model csharp_minitwit.Models.UserTimelineModel;
 @using csharp_minitwit.Utils;
 @inject IHttpContextAccessor _httpContext
 
@@ -19,7 +19,7 @@
         }
         else if (actionName == "UserTimeline")
         {
-            <text>@Model.profileUser.username's Timeline</text>
+            <text>@Model.ProfileUser.username's Timeline</text>
         }
         else
         {
@@ -29,27 +29,33 @@
 </h2>
 
 
-@if (Model.currentUserId.HasValue)
+@if (Model.CurrentUserId.HasValue)
 {
     @if (actionName == "UserTimeline")
     {
         <div class="followstatus">
             @using System.Security.Claims
 
-            @if (Model.currentUserId == Model.profileUser.user_id)
+            @if (Model.CurrentUserId == Model.ProfileUser.user_id)
             {
                 <text>This is you!</text>
             }
-            else if (Model.followed)
+            else if (Model.Followed)
             {
                 <text>You are currently following this user.
-                    <a class="unfollow" href="@Url.Action("UnfollowUser", new { username = Model.profileUser.username })">Unfollow user</a>.
+                    <form asp-action="UnfollowUser" method="post" class="inline-form">
+                    <input type="hidden" name="username" value="@Model.ProfileUser.username" />
+                     <button type="submit" class="unfollow-link">Unfollow user</button>
+                    </form>
                 </text>
             }
             else
             {
                 <text>You are not yet following this user.
-                    <a class="follow" href="@Url.Action("FollowUser", new { username = Model.profileUser.username })">Follow user</a>.
+                     <form asp-action="FollowUser" method="post" class="inline-form">
+                    <input type="hidden" name="username" value="@Model.ProfileUser.username" />
+                     <button type="submit" class="unfollow-link">Follow user</button>
+                    </form>
                 </text>
             }
         </div>
@@ -65,9 +71,9 @@
 }}
 
 <ul class="messages">
-    @if (Model.messages.Any())
+    @if (Model.Messages.Any())
     {
-        @foreach (var message in Model.messages)
+        @foreach (var message in Model.Messages)
         {
             var gravatarUrl = GravatarHelper.GetGravatarUrl(message.Email, 48);
             <li>

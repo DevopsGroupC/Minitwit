@@ -1,6 +1,6 @@
 namespace csharp_minitwit.Models
 {
-    public class RegisterViewModel
+    public class RegisterModel
     {
         public required string Username { get; set; }
         public required string Email { get; set; }
