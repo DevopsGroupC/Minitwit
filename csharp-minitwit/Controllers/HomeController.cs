@@ -1,13 +1,10 @@
 using System.Diagnostics;
-using System.Security.Cryptography;
 using Microsoft.AspNetCore.Mvc;
-using csharp_minitwit.Models;
 using csharp_minitwit.Services;
-using System.Security.Claims;
-using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Identity;
-using System.Net.Http;
+using csharp_minitwit.Models;
+using csharp_minitwit.Utils;
 
 namespace csharp_minitwit.Controllers;
 
@@ -18,7 +15,7 @@ public class HomeController : Controller
     private readonly string _perPage;
     private readonly PasswordHasher<UserModel> _passwordHasher;
 
-    public HomeController( IDatabaseService databaseService, IConfiguration configuration)
+    public HomeController(IDatabaseService databaseService, IConfiguration configuration)
     {
         _databaseService = databaseService;
         _configuration = configuration;
@@ -30,7 +27,7 @@ public class HomeController : Controller
     /// This timeline shows the user's messages as well as all the messages of followed users.
     /// </summary>
     /// <returns></returns>
-    public async Task<IActionResult>  Timeline()
+    public async Task<IActionResult> Timeline()
     {
         var userId = HttpContext.Session.GetInt32("user_id");
 
@@ -39,7 +36,7 @@ public class HomeController : Controller
             return Redirect("/public");
         }
 
-       var sqlQuery = @"
+        var sqlQuery = @"
             SELECT message.*, user.* 
             FROM message 
             JOIN user ON message.author_id = user.user_id 
@@ -60,25 +57,12 @@ public class HomeController : Controller
 
         var queryResult = await _databaseService.QueryDb<dynamic>(sqlQuery, parameters);
 
-        var messages = queryResult.Select(row =>
-                    {
-                        var dict = (IDictionary<string, object>)row;
-                        return new MessageModel
-                        {
-                            MessageId = (long)dict["message_id"],
-                            AuthorId = (long)dict["author_id"],
-                            Text = (string)dict["text"],
-                            PubDate = (long)dict["pub_date"],
-                            Flagged = (long)dict["flagged"],
-                            Username = (string)dict["username"],
-                            Email = (string)dict["email"],
-                        };
-                    }).ToList();
+        var messages = MessageHelper.MessageConverter(queryResult);
 
-        var viewModel = new UserTimelineViewModel
+        var viewModel = new UserTimelineModel
         {
-            currentUserId = userId,
-            messages = messages,
+            CurrentUserId = userId,
+            Messages = messages,
         };
 
         return View("Timeline", viewModel);
@@ -102,62 +86,47 @@ public class HomeController : Controller
         var dict = new Dictionary<string, object> { { "@PerPage", _perPage } };
         var queryResult = await _databaseService.QueryDb<dynamic>(sqlQuery, dict);
 
-        var messages = queryResult.Select(row =>
-    {
-        var dict = (IDictionary<string, object>)row;
-        return new MessageModel
-        {
-            MessageId = (long)dict["message_id"],
-            AuthorId = (long)dict["author_id"],
-            Text = (string)dict["text"],
-            PubDate = (long)dict["pub_date"],
-            Flagged = (long)dict["flagged"],
-            Username = (string)dict["username"],
-            Email = (string)dict["email"],
-        };
-    }).ToList();
+        var messages = MessageHelper.MessageConverter(queryResult);
 
-    var viewModel = new UserTimelineViewModel
+        var viewModel = new UserTimelineModel
         {
-            messages = messages,
+            Messages = messages,
         };
 
         return View("Timeline", viewModel);
     }
-    
 
     /// <summary>
     /// Registers a new message for the user.
     /// </summary>
     [HttpPost("/add_message")]
-    public async Task<IActionResult> AddMessage ([FromForm] MessageModel model)
+    public async Task<IActionResult> AddMessage([FromForm] MessageModel model)
     {
-         if (string.IsNullOrEmpty(HttpContext.Session.GetString("username"))) {
-            return Unauthorized(); 
-        } 
-        if (!string.IsNullOrEmpty(model.Text)){
+        if (string.IsNullOrEmpty(HttpContext.Session.GetString("username")))
+        {
+            return Unauthorized();
+        }
+        if (!string.IsNullOrEmpty(model.Text))
+        {
             var query = @"INSERT INTO message (author_id, text, pub_date, flagged)  
                             VALUES (@Author_id, @Text, @Pub_date, @Flagged)";
-        
-        var parameters = new Dictionary<string, object> {
-            {"@Author_id", HttpContext.Session.GetInt32("user_id")}, 
+
+            var parameters = new Dictionary<string, object> {
+            {"@Author_id", HttpContext.Session.GetInt32("user_id")},
             {"@Text", model.Text},
-            {"@Pub_date", (long)DateTimeOffset.Now.ToUnixTimeSeconds()}, 
+            {"@Pub_date", (long)DateTimeOffset.Now.ToUnixTimeSeconds()},
             {"@Flagged", 0}
         };
-        await _databaseService.QueryDb<dynamic>(query, parameters);
+            await _databaseService.QueryDb<dynamic>(query, parameters);
         }
         return Redirect("/");
     }
-
-
-
 
     /// <summary>
     /// Logs the user in.
     /// </summary>
     [HttpGet("/login"), HttpPost("/login")]
-    public async Task<IActionResult> Login([FromForm] LoginViewModel model)
+    public async Task<IActionResult> Login([FromForm] LoginModel model)
     {
         if (!string.IsNullOrEmpty(HttpContext.Session.GetString("user_id")))
         {
@@ -167,14 +136,17 @@ public class HomeController : Controller
         if (Request.Method == "POST" && ModelState.IsValid)
         {
             var query = "SELECT * FROM user WHERE username = @Username";
-            var dict = new Dictionary<string, object> {{"@Username", model.Username!}};
+            var dict = new Dictionary<string, object> { { "@Username", model.Username! } };
             var users = await _databaseService.QueryDb<UserModel>(query, dict);
             var user = users.FirstOrDefault();
 
-            if (user == null) {
+            if (user == null)
+            {
                 error = "Invalid username";
-            } else if (model.Password == null 
-            || _passwordHasher.VerifyHashedPassword(user, user.pw_hash, model.Password) == PasswordVerificationResult.Failed ) {
+            }
+            else if (model.Password == null
+            || _passwordHasher.VerifyHashedPassword(user, user.pw_hash, model.Password) == PasswordVerificationResult.Failed)
+            {
                 error = "Invalid password";
             }
             else
@@ -206,56 +178,57 @@ public class HomeController : Controller
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
     public IActionResult Error()
     {
-        return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
+        return View(new ErrorModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
     }
 
     /// <summary>
     /// Registers a new user.
     /// </summary>
     /// 
-    [HttpGet("/register")]
-    public async Task<IActionResult> Register()
+    [HttpPost("/register"), HttpGet("/register")]
+    public async Task<IActionResult> Register([FromForm] RegisterModel model)
     {
-        // Return the view
-        return View();
-    }
-
-    [HttpPost("/register")]
-    public async Task<IActionResult> Register([FromForm] RegisterViewModel model)
-    {
-        if (ModelState.IsValid)
+        if (Request.Method == "POST")
         {
-            //Validate form inputs
-            if (string.IsNullOrEmpty(model.Username))
+            if (ModelState.IsValid)
             {
-                ModelState.AddModelError("Username", "You have to enter a username");
+                //Validate form inputs
+                if (string.IsNullOrEmpty(model.Username))
+                {
+                    ModelState.AddModelError("Username", "You have to enter a username");
+                }
+                else if (string.IsNullOrEmpty(model.Password))
+                {
+                    ModelState.AddModelError("Password", "You have to enter a password");
+                }
+                else if (string.IsNullOrEmpty(model.Email))
+                {
+                    ModelState.AddModelError("Email", "You have to enter an email address");
+                }
+                else if (model.Password != model.Password2)
+                {
+                    ModelState.AddModelError("Password2", "The two passwords do not match");
+                }
+                else if (await IsUsernameTaken(model.Username))
+                {
+                    ModelState.AddModelError("Username", "The username is already taken");
+                }
+                else
+                {
+                    //Insert user into database
+                    var result = await InsertUser(model.Username, model.Email, model.Password);
+                    TempData["SuccessMessage"] = "You were successfully registered and can login now";
+                    return RedirectToAction("Login");
+                }
             }
-            else if (string.IsNullOrEmpty(model.Password))
-            {
-                ModelState.AddModelError("Password", "You have to enter a password");
-            }
-            else if (string.IsNullOrEmpty(model.Email))
-            {
-                ModelState.AddModelError("Email", "You have to enter an email address");
-            }
-            else if (model.Password != model.Password2)
-            {
-                ModelState.AddModelError("Password2", "The two passwords do not match");
-            }
-            else if (await IsUsernameTaken(model.Username))
-            {
-                ModelState.AddModelError("Username", "The username is already taken");
-            }
-            else
-            {
-                //Insert user into database
-                var result = await InsertUser(model.Username, model.Email, model.Password);
-                TempData["SuccessMessage"] = "You were successfully registered and can login now";
-                return RedirectToAction("Login");
-            }
+            // If model state is not valid, return back to the registration form with validation errors
+            return View(model);
+
         }
-        // If model state is not valid, return back to the registration form with validation errors
-        return View(model);
+        else
+        {
+            return View();
+        }
     }
 
     private async Task<bool> IsUsernameTaken(string username)
@@ -329,29 +302,15 @@ public class HomeController : Controller
             {"UserId", profileUser.user_id},
             {"Limit", 50} // Assuming PER_PAGE is 50, replace with your actual constant
         });
-        // needs to be converted to a new method because it is used twice
-        var messages = queryResult.Select(row =>
-            {
-                var dict = (IDictionary<string, object>)row;
-                return new MessageModel
-                {
-                    MessageId = (long)dict["message_id"],
-                    AuthorId = (long)dict["author_id"],
-                    Text = (string)dict["text"],
-                    PubDate = (long)dict["pub_date"],
-                    Flagged = (long)dict["flagged"],
-                    Username = (string)dict["username"],
-                    Email = (string)dict["email"],
-                };
-            }).ToList();
 
+        var messages = MessageHelper.MessageConverter(queryResult);
 
-        var viewModel = new UserTimelineViewModel
+        var viewModel = new UserTimelineModel
         {
-            currentUserId = currentUserId,
-            profileUser = profileUser,
-            messages = messages.ToList(),
-            followed = followed
+            CurrentUserId = currentUserId,
+            ProfileUser = profileUser,
+            Messages = messages.ToList(),
+            Followed = followed
         };
 
         return View("Timeline", viewModel);
@@ -361,7 +320,7 @@ public class HomeController : Controller
     [Route("/follow")]
     public async Task<IActionResult> FollowUser(string username)
     {
-         // Query for the profile user
+        // Query for the profile user
         var query = "SELECT * FROM user WHERE username = @Username";
         var dict = new Dictionary<string, object> { { "@Username", username } };
         var users = await _databaseService.QueryDb<UserModel>(query, dict);
@@ -372,7 +331,7 @@ public class HomeController : Controller
         {
             return NotFound();
         }
-       
+
 
         var currentUserId = HttpContext.Session.GetInt32("user_id");
 
@@ -394,7 +353,7 @@ public class HomeController : Controller
     [Route("/unfollow")]
     public async Task<IActionResult> UnfollowUser(string username)
     {
-         // Query for the profile user
+        // Query for the profile user
         var query = "SELECT * FROM user WHERE username = @Username";
         var dict = new Dictionary<string, object> { { "@Username", username } };
         var users = await _databaseService.QueryDb<UserModel>(query, dict);
@@ -406,9 +365,9 @@ public class HomeController : Controller
             return NotFound();
         }
 
-        var currentUserId = HttpContext.Session.GetInt32("user_id");
+        var currentUserId = HttpContext.Session.GetInt32("user_id"); //maybe it has to be changed
 
-         var parameters = new Dictionary<string, object>
+        var parameters = new Dictionary<string, object>
         {
             { "@WhoId", currentUserId },
             { "@WhomId", profileUser.user_id }
