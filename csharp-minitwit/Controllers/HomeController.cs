@@ -205,6 +205,10 @@ public class HomeController : Controller
                 {
                     ModelState.AddModelError("Email", "You have to enter an email address");
                 }
+                else if (!model.Email.Contains('@'))  
+                { 
+                    ModelState.AddModelError("Email", "You have to enter a valid email address"); 
+                } 
                 else if (model.Password != model.Password2)
                 {
                     ModelState.AddModelError("Password2", "The two passwords do not match");
