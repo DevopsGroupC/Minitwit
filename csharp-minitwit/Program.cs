@@ -18,7 +18,6 @@ builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 //     });
 
 builder.Services.AddDistributedMemoryCache();
-
 builder.Services.Configure<CookiePolicyOptions>(options =>
 {
     // This lambda determines whether user consent for non-essential 
