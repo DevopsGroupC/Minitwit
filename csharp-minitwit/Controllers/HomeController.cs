@@ -1,13 +1,9 @@
 using System.Diagnostics;
-using System.Security.Cryptography;
 using Microsoft.AspNetCore.Mvc;
-using csharp_minitwit.Models;
 using csharp_minitwit.Services;
-using System.Security.Claims;
-using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Identity;
-using System.Net.Http;
+using csharp_minitwit.Models;
 
 namespace csharp_minitwit.Controllers;
 
@@ -75,10 +71,10 @@ public class HomeController : Controller
                         };
                     }).ToList();
 
-        var viewModel = new UserTimelineViewModel
+        var viewModel = new UserTimelineModel
         {
-            currentUserId = userId,
-            messages = messages,
+            CurrentUserId = userId,
+            Messages = messages,
         };
 
         return View("Timeline", viewModel);
@@ -117,9 +113,9 @@ public class HomeController : Controller
         };
     }).ToList();
 
-    var viewModel = new UserTimelineViewModel
+    var viewModel = new UserTimelineModel
         {
-            messages = messages,
+            Messages = messages,
         };
 
         return View("Timeline", viewModel);
@@ -157,7 +153,7 @@ public class HomeController : Controller
     /// Logs the user in.
     /// </summary>
     [HttpGet("/login"), HttpPost("/login")]
-    public async Task<IActionResult> Login([FromForm] LoginViewModel model)
+    public async Task<IActionResult> Login([FromForm] LoginModel model)
     {
         if (!string.IsNullOrEmpty(HttpContext.Session.GetString("user_id")))
         {
@@ -206,7 +202,7 @@ public class HomeController : Controller
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
     public IActionResult Error()
     {
-        return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
+        return View(new ErrorModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
     }
 
     /// <summary>
@@ -221,7 +217,7 @@ public class HomeController : Controller
     }
 
     [HttpPost("/register")]
-    public async Task<IActionResult> Register([FromForm] RegisterViewModel model)
+    public async Task<IActionResult> Register([FromForm] RegisterModel model)
     {
         if (ModelState.IsValid)
         {
@@ -346,12 +342,12 @@ public class HomeController : Controller
             }).ToList();
 
 
-        var viewModel = new UserTimelineViewModel
+        var viewModel = new UserTimelineModel
         {
-            currentUserId = currentUserId,
-            profileUser = profileUser,
-            messages = messages.ToList(),
-            followed = followed
+            CurrentUserId = currentUserId,
+            ProfileUser = profileUser,
+            Messages = messages.ToList(),
+            Followed = followed
         };
 
         return View("Timeline", viewModel);
@@ -406,7 +402,7 @@ public class HomeController : Controller
             return NotFound();
         }
 
-        var currentUserId = HttpContext.Session.GetInt32("user_id");
+        var currentUserId = HttpContext.Session.GetInt32("user_id"); //maybe it has to be changed
 
          var parameters = new Dictionary<string, object>
         {
