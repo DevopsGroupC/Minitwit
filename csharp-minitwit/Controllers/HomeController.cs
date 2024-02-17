@@ -5,6 +5,8 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Identity;
 using csharp_minitwit.Models;
 using csharp_minitwit.Utils;
+using System.Text.RegularExpressions;
+
 
 namespace csharp_minitwit.Controllers;
 
@@ -201,13 +203,9 @@ public class HomeController : Controller
                 {
                     ModelState.AddModelError("Password", "You have to enter a password");
                 }
-                else if (string.IsNullOrEmpty(model.Email))
+                else if (!IsValidEmailDomain(model.Email))
                 {
                     ModelState.AddModelError("Email", "You have to enter an email address");
-                }
-                else if (!model.Email.Contains('@'))  
-                { 
-                    ModelState.AddModelError("Email", "You have to enter a valid email address"); 
                 } 
                 else if (model.Password != model.Password2)
                 {
@@ -259,6 +257,19 @@ public class HomeController : Controller
         };
         return await _databaseService.QueryDb<dynamic>(sqlQuery, parameters);
     }
+
+
+    private bool IsValidEmailDomain(string email)
+    {
+        if (string.IsNullOrEmpty(email) || !email.Contains('@'))
+        {
+            return false;
+        }
+        var domain = email.Split('@')[1];
+        var domainPattern = @"^[a-zA-Z]+\.((com)|(dk))$"; 
+        return Regex.IsMatch(domain, domainPattern);
+    }
+
 
     [HttpGet("/{username}")]
     public async Task<IActionResult> UserTimeline(string username)
