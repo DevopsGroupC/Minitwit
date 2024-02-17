@@ -187,10 +187,10 @@ public class HomeController : Controller
     /// Registers a new user.
     /// </summary>
     /// 
-    [HttpPost("/register"), HttpGet("/register")]
+    [HttpPost("/register")]
     public async Task<IActionResult> Register([FromForm] RegisterModel model)
     {
-        if (Request.Method == "POST")
+        if (true)
         {
             if (ModelState.IsValid)
             {
@@ -225,12 +225,14 @@ public class HomeController : Controller
             }
             // If model state is not valid, return back to the registration form with validation errors
             return View(model);
+        }
+        
+    }
 
-        }
-        else
-        {
-            return View();
-        }
+    [HttpGet("/register")]
+    public IActionResult Register()
+    {
+        return View();
     }
 
     private async Task<bool> IsUsernameTaken(string username)
