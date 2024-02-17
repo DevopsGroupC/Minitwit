@@ -127,9 +127,15 @@ public class HomeController : Controller
     /// <summary>
     /// Logs the user in.
     /// </summary>
-    [HttpGet("/login"), HttpPost("/login")]
+    [HttpPost("/login")]
     public async Task<IActionResult> Login([FromForm] LoginModel model)
     {
+        if (!ModelState.IsValid)
+        {
+            ViewBag.registrationSuccess = false;
+            return View("login");
+        }
+
         if (!string.IsNullOrEmpty(HttpContext.Session.GetString("user_id")))
         {
             return Redirect("/");
@@ -162,6 +168,20 @@ public class HomeController : Controller
         if (!string.IsNullOrEmpty(error))
         {
             ModelState.AddModelError("", error); // Add error to entire form
+        }
+        return View("login");
+    }
+
+    [HttpGet("/login")]
+    public IActionResult Login(bool? registrationSuccess)
+    {
+        if (registrationSuccess.HasValue && registrationSuccess.Value)
+        {
+            ViewBag.registrationSuccess = true;
+        }
+        else
+        {
+            ViewBag.registrationSuccess = false;
         }
         return View("login");
     }
@@ -219,8 +239,8 @@ public class HomeController : Controller
                 {
                     //Insert user into database
                     var result = await InsertUser(model.Username, model.Email, model.Password);
-                    TempData["SuccessMessage"] = "You were successfully registered and can login now";
-                    return RedirectToAction("Login");
+                    //TempData["Message"] = "You were successfully registered and can login now";
+                    return RedirectToAction("Login", new { registrationSuccess = true });
                 }
             }
             // If model state is not valid, return back to the registration form with validation errors
