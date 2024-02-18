@@ -1,0 +1,27 @@
+name: Docker Image CI
+
+on:
+  push:
+    branches: [ "main", "feature/30-set-up-database" ]
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check out the repo
+      uses: actions/checkout@v3
+
+    - name: Log in to DigitalOcean Container Registry
+      uses: docker/login-action@v1
+      with:
+        registry: registry.digitalocean.com
+        username: _  # DigitalOcean uses a static username '_'
+        password: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
+
+    - name: Build and push Docker image
+      uses: docker/build-push-action@v3
+      with:
+        context: .  # Assumes your Dockerfile is in the root of your repository
+        file: ./Dockerfile  # Path to your Dockerfile
+        push: true
+        tags: ${{ secrets.REGISTRY_NAME }}/${{ secrets.IMAGE_NAME }}:latest  # Modify as needed
