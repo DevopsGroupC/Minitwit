@@ -18,6 +18,14 @@
         </ul>
     </div>
 }
+
+@if (ViewBag.RegistrationSuccess != null && ViewBag.RegistrationSuccess == true) 
+{
+    <div class="alert alert-success" role="alert">
+       You were succesfully registered and can login now 
+    </div>
+}
+
 <form asp-action="Login" method="post">
     <dl>
         <dt>Username:</dt>

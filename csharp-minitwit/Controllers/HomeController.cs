@@ -5,6 +5,8 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Identity;
 using csharp_minitwit.Models;
 using csharp_minitwit.Utils;
+using System.Text.RegularExpressions;
+
 
 namespace csharp_minitwit.Controllers;
 
@@ -125,9 +127,15 @@ public class HomeController : Controller
     /// <summary>
     /// Logs the user in.
     /// </summary>
-    [HttpGet("/login"), HttpPost("/login")]
+    [HttpPost("/login")]
     public async Task<IActionResult> Login([FromForm] LoginModel model)
     {
+        if (!ModelState.IsValid)
+        {
+            ViewBag.registrationSuccess = false;
+            return View("login");
+        }
+
         if (!string.IsNullOrEmpty(HttpContext.Session.GetString("user_id")))
         {
             return Redirect("/");
@@ -164,6 +172,20 @@ public class HomeController : Controller
         return View("login");
     }
 
+    [HttpGet("/login")]
+    public IActionResult Login(bool? registrationSuccess)
+    {
+        if (registrationSuccess.HasValue && registrationSuccess.Value)
+        {
+            ViewBag.registrationSuccess = true;
+        }
+        else
+        {
+            ViewBag.registrationSuccess = false;
+        }
+        return View("login");
+    }
+
     /// <summary>
     /// Logs the user out.
     /// </summary>
@@ -185,10 +207,10 @@ public class HomeController : Controller
     /// Registers a new user.
     /// </summary>
     /// 
-    [HttpPost("/register"), HttpGet("/register")]
+    [HttpPost("/register")]
     public async Task<IActionResult> Register([FromForm] RegisterModel model)
     {
-        if (Request.Method == "POST")
+        if (true)
         {
             if (ModelState.IsValid)
             {
@@ -201,13 +223,9 @@ public class HomeController : Controller
                 {
                     ModelState.AddModelError("Password", "You have to enter a password");
                 }
-                else if (string.IsNullOrEmpty(model.Email))
+                else if (!IsValidEmailDomain(model.Email))
                 {
                     ModelState.AddModelError("Email", "You have to enter an email address");
-                }
-                else if (!model.Email.Contains('@'))  
-                { 
-                    ModelState.AddModelError("Email", "You have to enter a valid email address"); 
                 } 
                 else if (model.Password != model.Password2)
                 {
@@ -221,18 +239,20 @@ public class HomeController : Controller
                 {
                     //Insert user into database
                     var result = await InsertUser(model.Username, model.Email, model.Password);
-                    TempData["SuccessMessage"] = "You were successfully registered and can login now";
-                    return RedirectToAction("Login");
+                    //TempData["Message"] = "You were successfully registered and can login now";
+                    return RedirectToAction("Login", new { registrationSuccess = true });
                 }
             }
             // If model state is not valid, return back to the registration form with validation errors
             return View(model);
+        }
+        
+    }
 
-        }
-        else
-        {
-            return View();
-        }
+    [HttpGet("/register")]
+    public IActionResult Register()
+    {
+        return View();
     }
 
     private async Task<bool> IsUsernameTaken(string username)
@@ -259,6 +279,19 @@ public class HomeController : Controller
         };
         return await _databaseService.QueryDb<dynamic>(sqlQuery, parameters);
     }
+
+
+    private bool IsValidEmailDomain(string email)
+    {
+        if (string.IsNullOrEmpty(email) || !email.Contains('@'))
+        {
+            return false;
+        }
+        var domain = email.Split('@')[1];
+        var domainPattern = @"^[a-zA-Z]+\.((com)|(dk))$"; 
+        return Regex.IsMatch(domain, domainPattern);
+    }
+
 
     [HttpGet("/{username}")]
     public async Task<IActionResult> UserTimeline(string username)
