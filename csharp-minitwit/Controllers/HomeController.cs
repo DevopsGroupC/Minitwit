@@ -13,14 +13,12 @@ namespace csharp_minitwit.Controllers;
 public class HomeController : Controller
 {
     private readonly IDatabaseService _databaseService;
-    private readonly IConfiguration _configuration;
     private readonly string _perPage;
     private readonly PasswordHasher<UserModel> _passwordHasher;
 
     public HomeController(IDatabaseService databaseService, IConfiguration configuration)
     {
         _databaseService = databaseService;
-        _configuration = configuration;
         _perPage = configuration.GetValue<string>("Constants:PerPage")!;
         _passwordHasher = new PasswordHasher<UserModel>();
     }
@@ -28,9 +26,20 @@ public class HomeController : Controller
     /// Shows a users timeline or if no user is logged in it will redirect to the public timeline.
     /// This timeline shows the user's messages as well as all the messages of followed users.
     /// </summary>
-    /// <returns></returns>
+    [HttpGet("/")]
     public async Task<IActionResult> Timeline()
     {
+        var newlyLoggedIn = TempData["NewlyLoggedIn"] as bool?;
+        if (newlyLoggedIn.HasValue && newlyLoggedIn.Value)
+        {
+            ViewBag.newlyLoggedIn = true;
+        }
+        var messageRecorded = TempData["MessageRecorded"] as bool?;
+        if (messageRecorded.HasValue && messageRecorded.Value)
+        {
+            ViewBag.messageRecorded = true;
+        }
+
         var userId = HttpContext.Session.GetInt32("user_id");
 
         if (!userId.HasValue)
@@ -77,6 +86,12 @@ public class HomeController : Controller
     [HttpGet("/public")]
     public async Task<IActionResult> PublicTimeline()
     {
+        var newlyLoggedOut = TempData["NewlyLoggedOut"] as bool?;
+        if (newlyLoggedOut.HasValue && newlyLoggedOut.Value)
+        {
+            ViewBag.newlyLoggedOut = true;
+        }
+        
         var sqlQuery = @"
             SELECT message.*, user.*
             FROM message
@@ -120,6 +135,7 @@ public class HomeController : Controller
             {"@Flagged", 0}
         };
             await _databaseService.QueryDb<dynamic>(query, parameters);
+            TempData["MessageRecorded"] = true;
         }
         return Redirect("/");
     }
@@ -162,7 +178,8 @@ public class HomeController : Controller
                 Console.WriteLine("User logged in with id: " + user.user_id + " and username: " + user.username);
                 HttpContext.Session.SetInt32("user_id", user.user_id);
                 HttpContext.Session.SetString("username", user.username);
-                return Redirect("/");
+                TempData["NewlyLoggedIn"] = true;
+                return RedirectToAction("Timeline");
             }
         }
         if (!string.IsNullOrEmpty(error))
@@ -194,7 +211,8 @@ public class HomeController : Controller
     public IActionResult Logout()
     {
         HttpContext.Session.Clear();
-        return Redirect("/public");
+        TempData["NewlyLoggedOut"] = true;
+        return RedirectToAction("PublicTimeline");
     }
 
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
@@ -225,7 +243,7 @@ public class HomeController : Controller
                 }
                 else if (!IsValidEmailDomain(model.Email))
                 {
-                    ModelState.AddModelError("Email", "You have to enter an email address");
+                    ModelState.AddModelError("Email", "You have to enter a valid email address");
                 } 
                 else if (model.Password != model.Password2)
                 {
@@ -239,7 +257,6 @@ public class HomeController : Controller
                 {
                     //Insert user into database
                     var result = await InsertUser(model.Username, model.Email, model.Password);
-                    //TempData["Message"] = "You were successfully registered and can login now";
                     return RedirectToAction("Login", new { registrationSuccess = true });
                 }
             }
@@ -296,7 +313,12 @@ public class HomeController : Controller
     [HttpGet("/{username}")]
     public async Task<IActionResult> UserTimeline(string username)
     {
-
+        var message = TempData["Message"] as bool?;
+        if (message.HasValue && message.Value)
+        {
+            ViewBag.message = true;
+        }
+        
         // Query for the profile user
         var query = "SELECT * FROM user WHERE username = @Username";
         var dict = new Dictionary<string, object> { { "@Username", username } };
@@ -337,7 +359,7 @@ public class HomeController : Controller
         var queryResult = await _databaseService.QueryDb<dynamic>(messagesQuery, new Dictionary<string, object>
         {
             {"UserId", profileUser.user_id},
-            {"Limit", 50} // Assuming PER_PAGE is 50, replace with your actual constant
+            {"Limit", _perPage}
         });
 
         var messages = MessageHelper.MessageConverter(queryResult);
@@ -353,8 +375,7 @@ public class HomeController : Controller
         return View("Timeline", viewModel);
     }
 
-    [HttpPost]
-    [Route("/follow")]
+    [HttpGet("{username}/follow")]
     public async Task<IActionResult> FollowUser(string username)
     {
         // Query for the profile user
@@ -386,8 +407,7 @@ public class HomeController : Controller
         return RedirectToAction("UserTimeline", new { username = username });
     }
 
-    [HttpPost]
-    [Route("/unfollow")]
+    [HttpGet("{username}/unfollow")]
     public async Task<IActionResult> UnfollowUser(string username)
     {
         // Query for the profile user
