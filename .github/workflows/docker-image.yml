@@ -2,7 +2,7 @@ name: Docker Image CI
 
 on:
   push:
-    branches: [ "main", "feature/30-set-up-database" ]
+    branches: [ "main" ]
 
 jobs:
   build-and-push:
