@@ -27,6 +27,30 @@
         }
     }
 </h2>
+@if (ViewBag.messageRecorded != null && ViewBag.messageRecorded) 
+{
+    <div class="alert alert-success" role="alert">
+        Your message was recorded
+    </div>
+}
+@if (ViewBag.newlyLoggedIn != null && ViewBag.newlyLoggedIn) 
+{
+    <div class="alert alert-success" role="alert">
+        You were logged in 
+    </div>
+}
+@if (ViewBag.newlyLoggedOut != null && ViewBag.newlyLoggedOut) 
+{
+    <div class="alert alert-success" role="alert">
+        You were logged out
+    </div>
+}
+@if (ViewBag.message != null) 
+{
+    <div class="alert alert-success" role="alert">
+        @ViewBag.message
+    </div>
+}
 
 
 @if (Model.CurrentUserId.HasValue)
@@ -42,8 +66,10 @@
             }
             else if (Model.Followed)
             {
-                <text>You are currently following this user.
-                    <form asp-action="UnfollowUser" method="post" class="inline-form">
+                var lookingAtUser = ViewContext.RouteData.Values["username"].ToString();
+
+                <text>You are now following &#34;@lookingAtUser&#34;
+                    <form action="/@Model.ProfileUser.username/unfollow" method="get" class="inline-form">
                     <input type="hidden" name="username" value="@Model.ProfileUser.username" />
                      <button type="submit" class="unfollow-link">Unfollow user</button>
                     </form>
@@ -51,8 +77,10 @@
             }
             else
             {
-                <text>You are not yet following this user.
-                     <form asp-action="FollowUser" method="post" class="inline-form">
+                var lookingAtUser = ViewContext.RouteData.Values["username"].ToString();
+
+                <text>You are no longer following &#34;@lookingAtUser&#34;
+                    <form action="/@Model.ProfileUser.username/follow" method="get" class="inline-form">
                     <input type="hidden" name="username" value="@Model.ProfileUser.username" />
                      <button type="submit" class="unfollow-link">Follow user</button>
                     </form>
