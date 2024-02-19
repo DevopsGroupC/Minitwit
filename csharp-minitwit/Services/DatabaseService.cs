@@ -20,6 +20,11 @@ public class DatabaseService : IDatabaseService
     {
         var directory = Path.GetDirectoryName(dbFilePath);
         var sqlFilePath = Path.Combine(directory!, "schema.sql"); //Todo: don't hardcode.
+        
+        if (!Directory.Exists(directory))
+        {
+            Directory.CreateDirectory(directory!);
+        }
 
         using (var connection = new SqliteConnection(_connectionString))
         {
