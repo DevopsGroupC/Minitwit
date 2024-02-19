@@ -1,27 +1,24 @@
 using System.Diagnostics;
-using System.Security.Cryptography;
 using Microsoft.AspNetCore.Mvc;
-using csharp_minitwit.Models;
 using csharp_minitwit.Services;
-using System.Security.Claims;
-using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Identity;
-using System.Net.Http;
+using csharp_minitwit.Models;
+using csharp_minitwit.Utils;
+using System.Text.RegularExpressions;
+
 
 namespace csharp_minitwit.Controllers;
 
 public class HomeController : Controller
 {
     private readonly IDatabaseService _databaseService;
-    private readonly IConfiguration _configuration;
     private readonly string _perPage;
     private readonly PasswordHasher<UserModel> _passwordHasher;
 
-    public HomeController( IDatabaseService databaseService, IConfiguration configuration)
+    public HomeController(IDatabaseService databaseService, IConfiguration configuration)
     {
         _databaseService = databaseService;
-        _configuration = configuration;
         _perPage = configuration.GetValue<string>("Constants:PerPage")!;
         _passwordHasher = new PasswordHasher<UserModel>();
     }
@@ -29,9 +26,20 @@ public class HomeController : Controller
     /// Shows a users timeline or if no user is logged in it will redirect to the public timeline.
     /// This timeline shows the user's messages as well as all the messages of followed users.
     /// </summary>
-    /// <returns></returns>
-    public async Task<IActionResult>  Timeline()
+    [HttpGet("/")]
+    public async Task<IActionResult> Timeline()
     {
+        var newlyLoggedIn = TempData["NewlyLoggedIn"] as bool?;
+        if (newlyLoggedIn.HasValue && newlyLoggedIn.Value)
+        {
+            ViewBag.newlyLoggedIn = true;
+        }
+        var messageRecorded = TempData["MessageRecorded"] as bool?;
+        if (messageRecorded.HasValue && messageRecorded.Value)
+        {
+            ViewBag.messageRecorded = true;
+        }
+
         var userId = HttpContext.Session.GetInt32("user_id");
 
         if (!userId.HasValue)
@@ -39,7 +47,7 @@ public class HomeController : Controller
             return Redirect("/public");
         }
 
-       var sqlQuery = @"
+        var sqlQuery = @"
             SELECT message.*, user.* 
             FROM message 
             JOIN user ON message.author_id = user.user_id 
@@ -60,25 +68,12 @@ public class HomeController : Controller
 
         var queryResult = await _databaseService.QueryDb<dynamic>(sqlQuery, parameters);
 
-        var messages = queryResult.Select(row =>
-                    {
-                        var dict = (IDictionary<string, object>)row;
-                        return new MessageModel
-                        {
-                            MessageId = (long)dict["message_id"],
-                            AuthorId = (long)dict["author_id"],
-                            Text = (string)dict["text"],
-                            PubDate = (long)dict["pub_date"],
-                            Flagged = (long)dict["flagged"],
-                            Username = (string)dict["username"],
-                            Email = (string)dict["email"],
-                        };
-                    }).ToList();
+        var messages = MessageHelper.MessageConverter(queryResult);
 
-        var viewModel = new UserTimelineViewModel
+        var viewModel = new UserTimelineModel
         {
-            currentUserId = userId,
-            messages = messages,
+            CurrentUserId = userId,
+            Messages = messages,
         };
 
         return View("Timeline", viewModel);
@@ -91,6 +86,12 @@ public class HomeController : Controller
     [HttpGet("/public")]
     public async Task<IActionResult> PublicTimeline()
     {
+        var newlyLoggedOut = TempData["NewlyLoggedOut"] as bool?;
+        if (newlyLoggedOut.HasValue && newlyLoggedOut.Value)
+        {
+            ViewBag.newlyLoggedOut = true;
+        }
+        
         var sqlQuery = @"
             SELECT message.*, user.*
             FROM message
@@ -102,63 +103,55 @@ public class HomeController : Controller
         var dict = new Dictionary<string, object> { { "@PerPage", _perPage } };
         var queryResult = await _databaseService.QueryDb<dynamic>(sqlQuery, dict);
 
-        var messages = queryResult.Select(row =>
-    {
-        var dict = (IDictionary<string, object>)row;
-        return new MessageModel
-        {
-            MessageId = (long)dict["message_id"],
-            AuthorId = (long)dict["author_id"],
-            Text = (string)dict["text"],
-            PubDate = (long)dict["pub_date"],
-            Flagged = (long)dict["flagged"],
-            Username = (string)dict["username"],
-            Email = (string)dict["email"],
-        };
-    }).ToList();
+        var messages = MessageHelper.MessageConverter(queryResult);
 
-    var viewModel = new UserTimelineViewModel
+        var viewModel = new UserTimelineModel
         {
-            messages = messages,
+            Messages = messages,
         };
 
         return View("Timeline", viewModel);
     }
-    
 
     /// <summary>
     /// Registers a new message for the user.
     /// </summary>
     [HttpPost("/add_message")]
-    public async Task<IActionResult> AddMessage ([FromForm] MessageModel model)
+    public async Task<IActionResult> AddMessage([FromForm] MessageModel model)
     {
-         if (string.IsNullOrEmpty(HttpContext.Session.GetString("username"))) {
-            return Unauthorized(); 
-        } 
-        if (!string.IsNullOrEmpty(model.Text)){
+        if (string.IsNullOrEmpty(HttpContext.Session.GetString("username")))
+        {
+            return Unauthorized();
+        }
+        if (!string.IsNullOrEmpty(model.Text))
+        {
             var query = @"INSERT INTO message (author_id, text, pub_date, flagged)  
                             VALUES (@Author_id, @Text, @Pub_date, @Flagged)";
-        
-        var parameters = new Dictionary<string, object> {
-            {"@Author_id", HttpContext.Session.GetInt32("user_id")}, 
+
+            var parameters = new Dictionary<string, object> {
+            {"@Author_id", HttpContext.Session.GetInt32("user_id")},
             {"@Text", model.Text},
-            {"@Pub_date", (long)DateTimeOffset.Now.ToUnixTimeSeconds()}, 
+            {"@Pub_date", (long)DateTimeOffset.Now.ToUnixTimeSeconds()},
             {"@Flagged", 0}
         };
-        await _databaseService.QueryDb<dynamic>(query, parameters);
+            await _databaseService.QueryDb<dynamic>(query, parameters);
+            TempData["MessageRecorded"] = true;
         }
         return Redirect("/");
     }
 
-
-
-
     /// <summary>
     /// Logs the user in.
     /// </summary>
-    [HttpGet("/login"), HttpPost("/login")]
-    public async Task<IActionResult> Login([FromForm] LoginViewModel model)
+    [HttpPost("/login")]
+    public async Task<IActionResult> Login([FromForm] LoginModel model)
     {
+        if (!ModelState.IsValid)
+        {
+            ViewBag.registrationSuccess = false;
+            return View("login");
+        }
+
         if (!string.IsNullOrEmpty(HttpContext.Session.GetString("user_id")))
         {
             return Redirect("/");
@@ -167,14 +160,17 @@ public class HomeController : Controller
         if (Request.Method == "POST" && ModelState.IsValid)
         {
             var query = "SELECT * FROM user WHERE username = @Username";
-            var dict = new Dictionary<string, object> {{"@Username", model.Username!}};
+            var dict = new Dictionary<string, object> { { "@Username", model.Username! } };
             var users = await _databaseService.QueryDb<UserModel>(query, dict);
             var user = users.FirstOrDefault();
 
-            if (user == null) {
+            if (user == null)
+            {
                 error = "Invalid username";
-            } else if (model.Password == null 
-            || _passwordHasher.VerifyHashedPassword(user, user.pw_hash, model.Password) == PasswordVerificationResult.Failed ) {
+            }
+            else if (model.Password == null
+            || _passwordHasher.VerifyHashedPassword(user, user.pw_hash, model.Password) == PasswordVerificationResult.Failed)
+            {
                 error = "Invalid password";
             }
             else
@@ -182,12 +178,27 @@ public class HomeController : Controller
                 Console.WriteLine("User logged in with id: " + user.user_id + " and username: " + user.username);
                 HttpContext.Session.SetInt32("user_id", user.user_id);
                 HttpContext.Session.SetString("username", user.username);
-                return Redirect("/");
+                TempData["NewlyLoggedIn"] = true;
+                return RedirectToAction("Timeline");
             }
         }
         if (!string.IsNullOrEmpty(error))
         {
             ModelState.AddModelError("", error); // Add error to entire form
+        }
+        return View("login");
+    }
+
+    [HttpGet("/login")]
+    public IActionResult Login(bool? registrationSuccess)
+    {
+        if (registrationSuccess.HasValue && registrationSuccess.Value)
+        {
+            ViewBag.registrationSuccess = true;
+        }
+        else
+        {
+            ViewBag.registrationSuccess = false;
         }
         return View("login");
     }
@@ -200,62 +211,65 @@ public class HomeController : Controller
     public IActionResult Logout()
     {
         HttpContext.Session.Clear();
-        return Redirect("/public");
+        TempData["NewlyLoggedOut"] = true;
+        return RedirectToAction("PublicTimeline");
     }
 
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
     public IActionResult Error()
     {
-        return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
+        return View(new ErrorModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
     }
 
     /// <summary>
     /// Registers a new user.
     /// </summary>
     /// 
-    [HttpGet("/register")]
-    public async Task<IActionResult> Register()
+    [HttpPost("/register")]
+    public async Task<IActionResult> Register([FromForm] RegisterModel model)
     {
-        // Return the view
-        return View();
+        if (true)
+        {
+            if (ModelState.IsValid)
+            {
+                //Validate form inputs
+                if (string.IsNullOrEmpty(model.Username))
+                {
+                    ModelState.AddModelError("Username", "You have to enter a username");
+                }
+                else if (string.IsNullOrEmpty(model.Password))
+                {
+                    ModelState.AddModelError("Password", "You have to enter a password");
+                }
+                else if (!IsValidEmailDomain(model.Email))
+                {
+                    ModelState.AddModelError("Email", "You have to enter a valid email address");
+                } 
+                else if (model.Password != model.Password2)
+                {
+                    ModelState.AddModelError("Password2", "The two passwords do not match");
+                }
+                else if (await IsUsernameTaken(model.Username))
+                {
+                    ModelState.AddModelError("Username", "The username is already taken");
+                }
+                else
+                {
+                    //Insert user into database
+                    var result = await InsertUser(model.Username, model.Email, model.Password);
+                    return RedirectToAction("Login", new { registrationSuccess = true });
+                }
+            }
+            // If model state is not valid, return back to the registration form with validation errors
+            return View(model);
+        }
+        
     }
 
-    [HttpPost("/register")]
-    public async Task<IActionResult> Register([FromForm] RegisterViewModel model)
+    [HttpGet("/register")]
+    public IActionResult Register()
     {
-        if (ModelState.IsValid)
-        {
-            //Validate form inputs
-            if (string.IsNullOrEmpty(model.Username))
-            {
-                ModelState.AddModelError("Username", "You have to enter a username");
-            }
-            else if (string.IsNullOrEmpty(model.Password))
-            {
-                ModelState.AddModelError("Password", "You have to enter a password");
-            }
-            else if (string.IsNullOrEmpty(model.Email))
-            {
-                ModelState.AddModelError("Email", "You have to enter an email address");
-            }
-            else if (model.Password != model.Password2)
-            {
-                ModelState.AddModelError("Password2", "The two passwords do not match");
-            }
-            else if (await IsUsernameTaken(model.Username))
-            {
-                ModelState.AddModelError("Username", "The username is already taken");
-            }
-            else
-            {
-                //Insert user into database
-                var result = await InsertUser(model.Username, model.Email, model.Password);
-                TempData["SuccessMessage"] = "You were successfully registered and can login now";
-                return RedirectToAction("Login");
-            }
-        }
-        // If model state is not valid, return back to the registration form with validation errors
-        return View(model);
+        return View();
     }
 
     private async Task<bool> IsUsernameTaken(string username)
@@ -283,10 +297,28 @@ public class HomeController : Controller
         return await _databaseService.QueryDb<dynamic>(sqlQuery, parameters);
     }
 
+
+    private bool IsValidEmailDomain(string email)
+    {
+        if (string.IsNullOrEmpty(email) || !email.Contains('@'))
+        {
+            return false;
+        }
+        var domain = email.Split('@')[1];
+        var domainPattern = @"^[a-zA-Z]+\.((com)|(dk))$"; 
+        return Regex.IsMatch(domain, domainPattern);
+    }
+
+
     [HttpGet("/{username}")]
     public async Task<IActionResult> UserTimeline(string username)
     {
-
+        var message = TempData["Message"] as bool?;
+        if (message.HasValue && message.Value)
+        {
+            ViewBag.message = true;
+        }
+        
         // Query for the profile user
         var query = "SELECT * FROM user WHERE username = @Username";
         var dict = new Dictionary<string, object> { { "@Username", username } };
@@ -327,41 +359,26 @@ public class HomeController : Controller
         var queryResult = await _databaseService.QueryDb<dynamic>(messagesQuery, new Dictionary<string, object>
         {
             {"UserId", profileUser.user_id},
-            {"Limit", 50} // Assuming PER_PAGE is 50, replace with your actual constant
+            {"Limit", _perPage}
         });
-        // needs to be converted to a new method because it is used twice
-        var messages = queryResult.Select(row =>
-            {
-                var dict = (IDictionary<string, object>)row;
-                return new MessageModel
-                {
-                    MessageId = (long)dict["message_id"],
-                    AuthorId = (long)dict["author_id"],
-                    Text = (string)dict["text"],
-                    PubDate = (long)dict["pub_date"],
-                    Flagged = (long)dict["flagged"],
-                    Username = (string)dict["username"],
-                    Email = (string)dict["email"],
-                };
-            }).ToList();
 
+        var messages = MessageHelper.MessageConverter(queryResult);
 
-        var viewModel = new UserTimelineViewModel
+        var viewModel = new UserTimelineModel
         {
-            currentUserId = currentUserId,
-            profileUser = profileUser,
-            messages = messages.ToList(),
-            followed = followed
+            CurrentUserId = currentUserId,
+            ProfileUser = profileUser,
+            Messages = messages.ToList(),
+            Followed = followed
         };
 
         return View("Timeline", viewModel);
     }
 
-    [HttpPost]
-    [Route("/follow")]
+    [HttpGet("{username}/follow")]
     public async Task<IActionResult> FollowUser(string username)
     {
-         // Query for the profile user
+        // Query for the profile user
         var query = "SELECT * FROM user WHERE username = @Username";
         var dict = new Dictionary<string, object> { { "@Username", username } };
         var users = await _databaseService.QueryDb<UserModel>(query, dict);
@@ -372,7 +389,7 @@ public class HomeController : Controller
         {
             return NotFound();
         }
-       
+
 
         var currentUserId = HttpContext.Session.GetInt32("user_id");
 
@@ -390,11 +407,10 @@ public class HomeController : Controller
         return RedirectToAction("UserTimeline", new { username = username });
     }
 
-    [HttpPost]
-    [Route("/unfollow")]
+    [HttpGet("{username}/unfollow")]
     public async Task<IActionResult> UnfollowUser(string username)
     {
-         // Query for the profile user
+        // Query for the profile user
         var query = "SELECT * FROM user WHERE username = @Username";
         var dict = new Dictionary<string, object> { { "@Username", username } };
         var users = await _databaseService.QueryDb<UserModel>(query, dict);
@@ -406,9 +422,9 @@ public class HomeController : Controller
             return NotFound();
         }
 
-        var currentUserId = HttpContext.Session.GetInt32("user_id");
+        var currentUserId = HttpContext.Session.GetInt32("user_id"); //maybe it has to be changed
 
-         var parameters = new Dictionary<string, object>
+        var parameters = new Dictionary<string, object>
         {
             { "@WhoId", currentUserId },
             { "@WhomId", profileUser.user_id }

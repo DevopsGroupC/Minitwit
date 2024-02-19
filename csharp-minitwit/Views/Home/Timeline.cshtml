@@ -1,4 +1,4 @@
-@model csharp_minitwit.Models.UserTimelineViewModel;
+@model csharp_minitwit.Models.UserTimelineModel;
 @using csharp_minitwit.Utils;
 @inject IHttpContextAccessor _httpContext
 
@@ -19,7 +19,7 @@
         }
         else if (actionName == "UserTimeline")
         {
-            <text>@Model.profileUser.username's Timeline</text>
+            <text>@Model.ProfileUser.username's Timeline</text>
         }
         else
         {
@@ -27,33 +27,61 @@
         }
     }
 </h2>
+@if (ViewBag.messageRecorded != null && ViewBag.messageRecorded) 
+{
+    <div class="alert alert-success" role="alert">
+        Your message was recorded
+    </div>
+}
+@if (ViewBag.newlyLoggedIn != null && ViewBag.newlyLoggedIn) 
+{
+    <div class="alert alert-success" role="alert">
+        You were logged in 
+    </div>
+}
+@if (ViewBag.newlyLoggedOut != null && ViewBag.newlyLoggedOut) 
+{
+    <div class="alert alert-success" role="alert">
+        You were logged out
+    </div>
+}
+@if (ViewBag.message != null) 
+{
+    <div class="alert alert-success" role="alert">
+        @ViewBag.message
+    </div>
+}
 
 
-@if (Model.currentUserId.HasValue)
+@if (Model.CurrentUserId.HasValue)
 {
     @if (actionName == "UserTimeline")
     {
         <div class="followstatus">
             @using System.Security.Claims
 
-            @if (Model.currentUserId == Model.profileUser.user_id)
+            @if (Model.CurrentUserId == Model.ProfileUser.user_id)
             {
                 <text>This is you!</text>
             }
-            else if (Model.followed)
+            else if (Model.Followed)
             {
-                <text>You are currently following this user.
-                    <form asp-action="UnfollowUser" method="post" class="inline-form">
-                    <input type="hidden" name="username" value="@Model.profileUser.username" />
+                var lookingAtUser = ViewContext.RouteData.Values["username"].ToString();
+
+                <text>You are now following &#34;@lookingAtUser&#34;
+                    <form action="/@Model.ProfileUser.username/unfollow" method="get" class="inline-form">
+                    <input type="hidden" name="username" value="@Model.ProfileUser.username" />
                      <button type="submit" class="unfollow-link">Unfollow user</button>
                     </form>
                 </text>
             }
             else
             {
-                <text>You are not yet following this user.
-                     <form asp-action="FollowUser" method="post" class="inline-form">
-                    <input type="hidden" name="username" value="@Model.profileUser.username" />
+                var lookingAtUser = ViewContext.RouteData.Values["username"].ToString();
+
+                <text>You are no longer following &#34;@lookingAtUser&#34;
+                    <form action="/@Model.ProfileUser.username/follow" method="get" class="inline-form">
+                    <input type="hidden" name="username" value="@Model.ProfileUser.username" />
                      <button type="submit" class="unfollow-link">Follow user</button>
                     </form>
                 </text>
@@ -71,9 +99,9 @@
 }}
 
 <ul class="messages">
-    @if (Model.messages.Any())
+    @if (Model.Messages.Any())
     {
-        @foreach (var message in Model.messages)
+        @foreach (var message in Model.Messages)
         {
             var gravatarUrl = GravatarHelper.GetGravatarUrl(message.Email, 48);
             <li>
