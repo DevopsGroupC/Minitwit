@@ -626,3 +626,5 @@ $RECYCLE.BIN/
 
 # Vim temporary swap files
 *.swp
+
+csharp-minitwit/Databases/minitwit.db

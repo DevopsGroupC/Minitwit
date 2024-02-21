@@ -9,22 +9,9 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddSingleton<IDatabaseService, DatabaseService>();
 builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 
-// Add services to the container.
-// builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
-//     .AddCookie(options =>
-//     {
-//         options.ExpireTimeSpan = TimeSpan.FromMinutes(20);
-//         options.SlidingExpiration = true;
-//     });
-
 builder.Services.AddDistributedMemoryCache();
-
 builder.Services.Configure<CookiePolicyOptions>(options =>
 {
-    // This lambda determines whether user consent for non-essential 
-    // cookies is needed for a given request.
-    options.CheckConsentNeeded = context => true;
-
     options.MinimumSameSitePolicy = SameSiteMode.None;
 });
 
@@ -63,12 +50,12 @@ app.UseHttpsRedirection();
 app.UseStaticFiles();
 
 app.UseRouting();
+app.UseSession();
 
 app.UseAuthentication();
 app.UseAuthorization();
 
 app.UseCookiePolicy();
-app.UseSession();
 
 app.MapControllerRoute(
     name: "default",
