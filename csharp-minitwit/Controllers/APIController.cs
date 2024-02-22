@@ -54,13 +54,27 @@ public class APIController : ControllerBase
         try
         {   
             var latest = System.IO.File.ReadAllText("Services/latest_processed_sim_action_id.txt");
-            latestProcessedCommandID = int.Parse(latest);
+            latestProcessedCommandID = 0;
         }
         catch (Exception)
         {
             latestProcessedCommandID = -1;
         }
-        return Ok(new {latest = latestProcessedCommandID});
+        return Ok (new{latest = latestProcessedCommandID});
+    }
+
+    public void updateLatest(string latest) {
+        int parsedLatest = -1;
+        try
+        {
+        parsedLatest = int.Parse(latest);
+        }
+        catch (System.Exception)
+        {    
+        }
+        if (parsedLatest != -1) {
+            System.IO.File.WriteAllText("Services/latest_processed_sim_action_id.txt", parsedLatest.ToString());
+        }
     }
 
         /// <summary>
@@ -68,11 +82,11 @@ public class APIController : ControllerBase
     /// </summary>
     /// 
     [HttpPost("register")]
-    public async Task<IActionResult> Register([FromBody] APIRegisterModel model)
+    public async Task<IActionResult> Register([FromBody] APIRegisterModel model, string latest)
     {   
         
-        //requestData in json
-        
+         updateLatest(latest);
+
         if (ModelState.IsValid)
         {
             //Validate form inputs
