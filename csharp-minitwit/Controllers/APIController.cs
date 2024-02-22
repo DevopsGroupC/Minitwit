@@ -54,7 +54,7 @@ public class APIController : ControllerBase
         try
         {   
             var latest = System.IO.File.ReadAllText("Services/latest_processed_sim_action_id.txt");
-            latestProcessedCommandID = 0;
+            latestProcessedCommandID = int.Parse(latest);
         }
         catch (Exception)
         {

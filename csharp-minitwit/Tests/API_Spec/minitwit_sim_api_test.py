@@ -7,8 +7,8 @@ from pathlib import Path
 from contextlib import closing
 
 
-BASE_URL = 'http://127.0.0.1:5001'
-DATABASE = "/tmp/minitwit.db"
+BASE_URL = 'http://localhost:8080/api'
+DATABASE = os.path.abspath("../../Databases/minitwit.db")
 USERNAME = 'simulator'
 PWD = 'super_safe!'
 CREDENTIALS = ':'.join([USERNAME, PWD]).encode('ascii')
@@ -18,17 +18,17 @@ HEADERS = {'Connection': 'close',
            f'Authorization': f'Basic {ENCODED_CREDENTIALS}'}
 
 
-def init_db():
-    """Creates the database tables."""
-    with closing(sqlite3.connect(DATABASE)) as db:
-        with open("schema.sql") as fp:
-            db.cursor().executescript(fp.read())
-        db.commit()
+# def init_db():
+#     """Creates the database tables."""
+#     with closing(sqlite3.connect(DATABASE)) as db:
+#         with open("schema.sql") as fp:
+#             db.cursor().executescript(fp.read())
+#         db.commit()
 
 
-# Empty the database and initialize the schema again
-Path(DATABASE).unlink()
-init_db()
+# # Empty the database and initialize the schema again
+# Path(DATABASE).unlink()
+# init_db()
 
 
 def test_latest():
@@ -56,8 +56,7 @@ def test_register():
     response = requests.post(f'{BASE_URL}/register',
                              data=json.dumps(data), headers=HEADERS, params=params)
     assert response.ok
-    # TODO: add another assertion that it is really there
-
+    # TODO: add another assertion that it is really the
     # verify that latest was updated
     response = requests.get(f'{BASE_URL}/latest', headers=HEADERS)
     assert response.json()['latest'] == 1
