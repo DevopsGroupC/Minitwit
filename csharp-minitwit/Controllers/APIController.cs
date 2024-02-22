@@ -42,12 +42,27 @@ public class APIController : ControllerBase
     {
         var fromSimulator = request.Headers["Authorization"].ToString();
         Console.WriteLine(fromSimulator);
-        if (fromSimulator != "Basic c2ltdWxhdG9yOnN1cGVyX3NhZmU=")
+        if (fromSimulator != "Basic c2ltdWxhdG9yOnN1cGVyX3NhZmUh")
         {
             var error = "You are not authorized to use this resource!";
             return error;
         }
         return null;
+    }
+
+    public int GetUserID(string username)
+    {
+        var sqlQuery = "SELECT user_id FROM user WHERE username = @Username";
+        var parameters = new Dictionary<string, object> { { "@Username", username } };
+        var result = _databaseService.QueryDb<int>(sqlQuery, parameters);
+
+
+
+        if (result.Result.Count() == 0)
+        {
+            return -1;
+        }
+        return result.Result.FirstOrDefault();
     }
 
     [HttpGet("latest")]
@@ -153,7 +168,7 @@ public class APIController : ControllerBase
     /// Registers a new message for the user.
     /// </summary>
     [HttpGet("msgs")]
-    public async Task<IActionResult> Messages(string latest)
+    public async Task<IActionResult> Messages(string latest, int no)
     {
         // Update latest
         updateLatest(latest);
@@ -161,7 +176,7 @@ public class APIController : ControllerBase
         // Check if request is from simulator
         var notFromSimResponse = NotReqFromSimulator(Request);
         if (notFromSimResponse != null)
-             return Forbid(notFromSimResponse);
+            return Forbid(notFromSimResponse);
 
         var sqlQuery = @"
             SELECT message.*, user.*
@@ -171,7 +186,7 @@ public class APIController : ControllerBase
             ORDER BY message.pub_date DESC
             LIMIT @PerPage";
 
-        var dict = new Dictionary<string, object> { { "@PerPage", _perPage } };
+        var dict = new Dictionary<string, object> { { "@PerPage", no } };
         var queryResult = await _databaseService.QueryDb<dynamic>(sqlQuery, dict);
 
         Console.WriteLine("queryres" + queryResult.Count());
@@ -189,27 +204,69 @@ public class APIController : ControllerBase
         return Ok(filteredMsgs);
     }
 
+    [HttpPost("msgs/{username}")]
+    public async Task<IActionResult> PostMessagesPerUser(string username, [FromBody] APIMessageModel model, int no, string latest)
+    {
+        // Update latest
+        updateLatest(latest);
 
+        // Check if request is from simulator
+        var notFromSimResponse = NotReqFromSimulator(Request);
+        if (notFromSimResponse != null)
+            return Forbid(notFromSimResponse);
+
+
+        if (!string.IsNullOrEmpty(model.content))
+        {
+            var query = @"INSERT INTO message (author_id, text, pub_date, flagged)  
+                            VALUES (@Author_id, @Text, @Pub_date, @Flagged)";
+
+            var parameters = new Dictionary<string, object> {
+            {"@Author_id", GetUserID(username)},
+            {"@Text", model.content},
+            {"@Pub_date", (long)DateTimeOffset.Now.ToUnixTimeSeconds()},
+            {"@Flagged", 0}
+        };
+            await _databaseService.QueryDb<dynamic>(query, parameters);
+            return NoContent();
+        }
+        return BadRequest();
+    }
+
+
+    [HttpGet("msgs/{username}")]
+    public async Task<IActionResult> GetMessagesPerUser(string username, int no, string latest)
+
+    {
+        var userID = GetUserID(username);
+        if (userID == -1)
+        {
+            return NotFound();
+        }
+        var sqlQuery = @"
+            SELECT message.*, user.*
+            FROM message
+            INNER JOIN user ON message.author_id = user.user_id
+            WHERE user.username = @Username AND message.flagged = 0
+            ORDER BY message.pub_date DESC
+            LIMIT @PerPage";
+
+        var dict = new Dictionary<string, object> { { "@Username", username }, { "@PerPage", no } };
+        var queryResult = await _databaseService.QueryDb<dynamic>(sqlQuery, dict);
+
+        var filteredMsgs = queryResult.Select(msg =>
+        {
+            var dictB = (IDictionary<string, object>)msg;
+            return new APIMessageModel
+            {
+                content = (string)dictB["text"],
+                pub_date = (long)dictB["pub_date"],
+                user = (string)dictB["username"]
+            };
+        }).ToList();
+        return Ok(filteredMsgs);
+    }
 }
 
-        //     else if (Request.Method == "POST")
-        // {
-        //  if (string.IsNullOrEmpty(HttpContext.Session.GetString("username"))) {
-        //     return Unauthorized(); 
-        // } 
-        // if (!string.IsNullOrEmpty(model.Text)){
-        //     var query = @"INSERT INTO message (author_id, text, pub_date, flagged)  
-        //                     VALUES (@Author_id, @Text, @Pub_date, @Flagged)";
-        
-        // var parameters = new Dictionary<string, object> {
-        //     {"@Author_id", HttpContext.Session.GetInt32("user_id")}, 
-        //     {"@Text", model.Text},
-        //     {"@Pub_date", (long)DateTimeOffset.Now.ToUnixTimeSeconds()}, 
-        //     {"@Flagged", 0}
-        // };
-        // await _databaseService.QueryDb<dynamic>(query, parameters);
-        // }
-        // return NoContent();
-        // }
 
-        // return BadRequest();
+       
