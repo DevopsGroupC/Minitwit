@@ -438,9 +438,4 @@ public class HomeController : Controller
         return RedirectToAction("UserTimeline", new { username = username });
     }
 
-
-    private bool IsPasswordValid(UserModel user, string? password)
-    {
-        return password != null && _passwordHasher.VerifyHashedPassword(user, user.pw_hash, password) == PasswordVerificationResult.Success;
-    }
 }

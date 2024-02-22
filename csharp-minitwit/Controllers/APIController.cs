@@ -16,13 +16,13 @@ namespace csharp_minitwit.Controllers;
 [ApiController]
 public class APIController : ControllerBase
 {
-    
+
     private readonly IDatabaseService _databaseService;
     private readonly IConfiguration _configuration;
     private readonly string _perPage;
     private readonly PasswordHasher<UserModel> _passwordHasher;
 
-    public APIController( IDatabaseService databaseService, IConfiguration configuration)
+    public APIController(IDatabaseService databaseService, IConfiguration configuration)
     {
         _databaseService = databaseService;
         _configuration = configuration;
@@ -31,28 +31,31 @@ public class APIController : ControllerBase
     }
 
 
-    
+
     [HttpGet("test")]
     public IActionResult Test()
     {
         return Ok("Test");
     }
 
-    // public IActionResult NotReqFromSimulator(HttpRequest request)
-    // {
-    //     var fromSimulator = request.Headers["Authorization"].ToString();
-    //     if (fromSimulator != "Basic c2ltdWxhdG9yOnN1cGVyX3NhZmUh") {
-    //         var error = new { error = "Not authorized" };
-    //         return Forbid();}  
-    //     return null;
-    // }
+    public string NotReqFromSimulator(HttpRequest request)
+    {
+        var fromSimulator = request.Headers["Authorization"].ToString();
+        Console.WriteLine(fromSimulator);
+        if (fromSimulator != "Basic c2ltdWxhdG9yOnN1cGVyX3NhZmU=")
+        {
+            var error = "You are not authorized to use this resource!";
+            return error;
+        }
+        return null;
+    }
 
     [HttpGet("latest")]
     public IActionResult GetLatest()
-    {   
+    {
         var latestProcessedCommandID = 0;
         try
-        {   
+        {
             var latest = System.IO.File.ReadAllText("Services/latest_processed_sim_action_id.txt");
             latestProcessedCommandID = int.Parse(latest);
         }
@@ -60,32 +63,34 @@ public class APIController : ControllerBase
         {
             latestProcessedCommandID = -1;
         }
-        return Ok (new{latest = latestProcessedCommandID});
+        return Ok(new { latest = latestProcessedCommandID });
     }
 
-    public void updateLatest(string latest) {
+    public void updateLatest(string latest)
+    {
         int parsedLatest = -1;
         try
         {
-        parsedLatest = int.Parse(latest);
+            parsedLatest = int.Parse(latest);
         }
         catch (System.Exception)
-        {    
+        {
         }
-        if (parsedLatest != -1) {
+        if (parsedLatest != -1)
+        {
             System.IO.File.WriteAllText("Services/latest_processed_sim_action_id.txt", parsedLatest.ToString());
         }
     }
 
-        /// <summary>
+    /// <summary>
     /// Registers a new user.
     /// </summary>
     /// 
     [HttpPost("register")]
     public async Task<IActionResult> Register([FromBody] APIRegisterModel model, string latest)
-    {   
-        
-         updateLatest(latest);
+    {
+
+        updateLatest(latest);
 
         if (ModelState.IsValid)
         {
@@ -111,7 +116,7 @@ public class APIController : ControllerBase
                 //Insert user into database
                 var result = await InsertUser(model.username, model.email, model.pwd);
                 //TempData["SuccessMessage"] = "You were successfully registered and can login now"; //Not needed? for the frontEnd?
-                return NoContent(); 
+                return NoContent();
             }
         }
         return BadRequest(ModelState);
@@ -142,92 +147,69 @@ public class APIController : ControllerBase
         return await _databaseService.QueryDb<dynamic>(sqlQuery, parameters);
     }
 
-    
+
 
     /// <summary>
     /// Registers a new message for the user.
     /// </summary>
-    // [HttpPost, HttpGet ("/api/msgs/<username>")]
-    // public async Task<IActionResult> AddMessage ([FromForm] MessageModel model)
-    // {
-    //     // Update latest
-    //     //UpdateLatest(Request);
+    [HttpGet("msgs")]
+    public async Task<IActionResult> Messages(string latest)
+    {
+        // Update latest
+        updateLatest(latest);
 
-    //     // // Check if request is from simulator
-    //     // var notFromSimResponse = NotReqFromSimulator(Request);
-    //     // if (notFromSimResponse != null)
-    //     //     return notFromSimResponse;
+        // Check if request is from simulator
+        var notFromSimResponse = NotReqFromSimulator(Request);
+        if (notFromSimResponse != null)
+             return Forbid(notFromSimResponse);
 
-    //     // Handle GET request
-    //     if (Request.Method == "GET")
-    //     {
-    //         var user_id = HttpContext.Session.GetInt32("user_id");
-    //         if (user_id == null)
-    //             return NotFound(); //should return a 404, as I understand
+        var sqlQuery = @"
+            SELECT message.*, user.*
+            FROM message
+            INNER JOIN user ON message.author_id = user.user_id
+            WHERE message.flagged = 0
+            ORDER BY message.pub_date DESC
+            LIMIT @PerPage";
 
-    //         var query = @"SELECT message.*, user.* FROM message, user
-    //                       WHERE message.flagged = 0 AND user.user_id = message.author_id AND user.user_id = ?
-    //                       ORDER BY message.pub_date DESC LIMIT ?";
-            
-    //         var dict = new Dictionary<string, object> { { "@PerPage", _perPage } };
-    //         var queryResult = await _databaseService.QueryDb<dynamic>(query, dict);
+        var dict = new Dictionary<string, object> { { "@PerPage", _perPage } };
+        var queryResult = await _databaseService.QueryDb<dynamic>(sqlQuery, dict);
 
-
-    //         var filteredMsgs = queryResult.Select(msg => new
-    //         {
-    //             content = msg["text"],
-    //             pub_date = msg["pub_date"],
-    //             user = msg["username"]
-    //         }).ToList();
-
-    //         return Ok(filteredMsgs);
-    //     }
-
-    //     else if (Request.Method == "POST")
-    //     {
-    //      if (string.IsNullOrEmpty(HttpContext.Session.GetString("username"))) {
-    //         return Unauthorized(); 
-    //     } 
-    //     if (!string.IsNullOrEmpty(model.Text)){
-    //         var query = @"INSERT INTO message (author_id, text, pub_date, flagged)  
-    //                         VALUES (@Author_id, @Text, @Pub_date, @Flagged)";
-        
-    //     var parameters = new Dictionary<string, object> {
-    //         {"@Author_id", HttpContext.Session.GetInt32("user_id")}, 
-    //         {"@Text", model.Text},
-    //         {"@Pub_date", (long)DateTimeOffset.Now.ToUnixTimeSeconds()}, 
-    //         {"@Flagged", 0}
-    //     };
-    //     await _databaseService.QueryDb<dynamic>(query, parameters);
-    //     }
-    //     return NoContent();
-    //     }
-
-    //     return BadRequest();
-    // }
+        Console.WriteLine("queryres" + queryResult.Count());
+        var filteredMsgs = queryResult.Select(msg =>
+        {
+            var dictB = (IDictionary<string, object>)msg;
+            return new APIMessageModel
+            {
+                content = (string)dictB["text"],
+                pub_date = (long)dictB["pub_date"],
+                user = (string)dictB["username"]
+            };
+        }).ToList();
+        Console.WriteLine(filteredMsgs);
+        return Ok(filteredMsgs);
+    }
 
 
-
-    /// <summary>
-    /// Logs the user out.
-    /// </summary>
-    /// <returns></returns>
-
-
-    // [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
-    // public IActionResult Error()
-    // {
-    //     return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
-    // }
-
-
-
-
-
-
-
-    // private bool IsPasswordValid(UserModel user, string? password)
-    // {
-    //     return password != null && _passwordHasher.VerifyHashedPassword(user, user.pw_hash, password) == PasswordVerificationResult.Success;
-    // }
 }
+
+        //     else if (Request.Method == "POST")
+        // {
+        //  if (string.IsNullOrEmpty(HttpContext.Session.GetString("username"))) {
+        //     return Unauthorized(); 
+        // } 
+        // if (!string.IsNullOrEmpty(model.Text)){
+        //     var query = @"INSERT INTO message (author_id, text, pub_date, flagged)  
+        //                     VALUES (@Author_id, @Text, @Pub_date, @Flagged)";
+        
+        // var parameters = new Dictionary<string, object> {
+        //     {"@Author_id", HttpContext.Session.GetInt32("user_id")}, 
+        //     {"@Text", model.Text},
+        //     {"@Pub_date", (long)DateTimeOffset.Now.ToUnixTimeSeconds()}, 
+        //     {"@Flagged", 0}
+        // };
+        // await _databaseService.QueryDb<dynamic>(query, parameters);
+        // }
+        // return NoContent();
+        // }
+
+        // return BadRequest();
