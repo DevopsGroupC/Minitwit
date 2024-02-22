@@ -63,6 +63,70 @@ public class APIController : ControllerBase
         return Ok(new {latest = latestProcessedCommandID});
     }
 
+        /// <summary>
+    /// Registers a new user.
+    /// </summary>
+    /// 
+    [HttpPost("register")]
+    public async Task<IActionResult> Register([FromBody] APIRegisterModel model)
+    {   
+        
+        //requestData in json
+        
+        if (ModelState.IsValid)
+        {
+            //Validate form inputs
+            if (string.IsNullOrEmpty(model.username))
+            {
+                ModelState.AddModelError("Username", "You have to enter a username");
+            }
+            else if (string.IsNullOrEmpty(model.pwd))
+            {
+                ModelState.AddModelError("Password", "You have to enter a password");
+            }
+            else if (string.IsNullOrEmpty(model.email))
+            {
+                ModelState.AddModelError("Email", "You have to enter a valid email address");
+            }
+            else if (await IsUsernameTaken(model.username))
+            {
+                ModelState.AddModelError("Username", "The username is already taken");
+            }
+            else
+            {
+                //Insert user into database
+                var result = await InsertUser(model.username, model.email, model.pwd);
+                //TempData["SuccessMessage"] = "You were successfully registered and can login now"; //Not needed? for the frontEnd?
+                return NoContent(); 
+            }
+        }
+        return BadRequest(ModelState);
+    }
+
+    private async Task<bool> IsUsernameTaken(string username)
+    {
+        var sqlQuery = "SELECT * FROM user WHERE username = @Username";
+        var parameters = new Dictionary<string, object> { { "@Username", username } };
+        var result = await _databaseService.QueryDb<dynamic>(sqlQuery, parameters);
+        return result.Count() > 0;
+    }
+
+    private async Task<dynamic> InsertUser(string username, string email, string password)
+    {
+        var sqlQuery = @"
+            INSERT INTO user (username, email, pw_hash)
+            VALUES (@Username, @Email, @Password)";
+
+        var hashedPassword = _passwordHasher.HashPassword(new UserModel(), password);
+
+        var parameters = new Dictionary<string, object>
+        {
+            { "@Username", username },
+            { "@Email", email },
+            { "@Password", hashedPassword }
+        };
+        return await _databaseService.QueryDb<dynamic>(sqlQuery, parameters);
+    }
 
     
 
@@ -142,78 +206,9 @@ public class APIController : ControllerBase
     //     return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
     // }
 
-    /// <summary>
-    /// Registers a new user.
-    /// </summary>
-    /// 
-    // [HttpGet("/api/register")]
-    // public async Task<IActionResult> Register()
-    // {
-    //     // Return the view
-    //     return View();
-    // }
 
-    // [HttpPost("/api/register")]
-    // public async Task<IActionResult> Register([FromForm] RegisterModel model)
-    // { //add update latest(request)
-    //     if (ModelState.IsValid)
-    //     {
-    //         //Validate form inputs
-    //         if (string.IsNullOrEmpty(model.Username))
-    //         {
-    //             ModelState.AddModelError("Username", "You have to enter a username");
-    //         }
-    //         else if (string.IsNullOrEmpty(model.Password))
-    //         {
-    //             ModelState.AddModelError("Password", "You have to enter a password");
-    //         }
-    //         else if (string.IsNullOrEmpty(model.Email))
-    //         {
-    //             ModelState.AddModelError("Email", "You have to enter an email address");
-    //         }
-    //         else if (model.Password != model.Password2)
-    //         {
-    //             ModelState.AddModelError("Password2", "The two passwords do not match");
-    //         }
-    //         else if (await IsUsernameTaken(model.Username))
-    //         {
-    //             ModelState.AddModelError("Username", "The username is already taken");
-    //         }
-    //         else
-    //         {
-    //             //Insert user into database
-    //             var result = await InsertUser(model.Username, model.Email, model.Password);
-    //             //TempData["SuccessMessage"] = "You were successfully registered and can login now"; //Not needed? for the frontEnd?
-    //             return NoContent(); 
-    //         }
-    //     }
-    //     return BadRequest(ModelState);
-    // }
 
-    // private async Task<bool> IsUsernameTaken(string username)
-    // {
-    //     var sqlQuery = "SELECT * FROM user WHERE username = @Username";
-    //     var parameters = new Dictionary<string, object> { { "@Username", username } };
-    //     var result = await _databaseService.QueryDb<dynamic>(sqlQuery, parameters);
-    //     return result.Count() > 0;
-    // }
 
-    // private async Task<dynamic> InsertUser(string username, string email, string password)
-    // {
-    //     var sqlQuery = @"
-    //         INSERT INTO user (username, email, pw_hash)
-    //         VALUES (@Username, @Email, @Password)";
-
-    //     var hashedPassword = _passwordHasher.HashPassword(new UserModel(), password);
-
-    //     var parameters = new Dictionary<string, object>
-    //     {
-    //         { "@Username", username },
-    //         { "@Email", email },
-    //         { "@Password", hashedPassword }
-    //     };
-    //     return await _databaseService.QueryDb<dynamic>(sqlQuery, parameters);
-    // }
 
 
 
