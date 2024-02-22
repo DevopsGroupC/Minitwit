@@ -10,7 +10,6 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Identity;
 using System.Net.Http;
 using System.Text.Json.Nodes;
-using Newtonsoft.Json;
 
 
 namespace csharp_minitwit.Controllers;
@@ -288,47 +287,73 @@ public class APIController : ControllerBase
 
         return Ok(followersResponse);
     }
+public class FollowActionDto
+{
+    public string? Follow { get; set; }
+    public string? Unfollow { get; set; }
+}
+
+
 
     [HttpPost("fllws/{username}")]
-    public async Task<IActionResult> FollowUser(string username, string latest, [FromBody] string follow)
+    public async Task<IActionResult> FollowUser(string username, string latest, [FromBody] FollowActionDto followAction )
     {
         updateLatest(latest);
 
         // Check if request is from simulator
         var notFromSimResponse = NotReqFromSimulator(Request);
-        if (notFromSimResponse.ErrorMessage != null)
+       if (notFromSimResponse != null)
             return Forbid(notFromSimResponse.ErrorMessage);
 
         var userID = GetUserID(username);
         if (userID == -1)
             return NotFound();
 
-        // // Extract the username to follow from the request body
-        // if (!string.IsNullOrEmpty(follow))
-        // {
-        // // Access the 'follow' property from the model
-        // string followUsername = follow;
+        // Extract the username to follow from the request body
+        if (!string.IsNullOrEmpty(followAction.Follow))
+        {
+            // Access the 'follow' property from the model
+            var followsUsername = followAction.Follow;
 
-        // var followsUsername = requestData["follow"];
+            var followsUserId = GetUserID(followsUsername);
+            if (followsUserId == -1)
+                return NotFound($"User '{followsUsername}' not found.");
 
-        // var followsUserId = GetUserID((string)followsUsername);
-        // if (followsUserId == -1)
-        //     return NotFound($"User '{followsUsername}' not found.");
+            // Insert the follow relationship into the database
+            var sqlQuery = "INSERT INTO follower (who_id, whom_id) VALUES (@WhoId, @WhomId)";
+            var parameters = new Dictionary<string, object>
+        {
+            { "@WhoId", userID },
+            { "@WhomId", followsUserId }
+        };
 
-        // // Insert the follow relationship into the database
-        // var sqlQuery = "INSERT INTO follower (who_id, whom_id) VALUES (@WhoId, @WhomId)";
-        // var parameters = new Dictionary<string, object>
-        // {
-        //     { "@WhoId", userID },
-        //     { "@WhomId", followsUserId }
-        // };
+            await _databaseService.QueryDb<int>(sqlQuery, parameters);
 
-        // await _databaseService.QueryDb<int>(sqlQuery, parameters);
+            return Ok($"Successfully followed user '{followsUserId}'.");
+        }
 
-        // return Ok($"Successfully followed user '{followsUserId}'.");
-        return Ok("Endpoint not working correctly");
+        // TODO: Implement unfollowing
+        if (!string.IsNullOrEmpty(followAction.Unfollow))
+        {
+            var unfollowsUsername = followAction.Unfollow;
+
+            var unfollowsUserId = GetUserID(unfollowsUsername);
+            if (unfollowsUserId == -1)
+                return NotFound($"User '{unfollowsUsername}' not found.");
+
+            var sqlQuery = "DELETE FROM follower WHERE who_id = @WhoId AND whom_id = @WhomId";
+            var parameters = new Dictionary<string, object>
+        {
+            { "@WhoId", userID },
+            { "@WhomId", unfollowsUserId }
+        };
+
+            await _databaseService.QueryDb<int>(sqlQuery, parameters);
+
+            return Ok($"Successfully unfollowed user '{unfollowsUserId}'.");
+        }
+        return BadRequest("Invalid request.");
     }
 }
 
 
-       
