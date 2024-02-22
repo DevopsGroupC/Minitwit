@@ -3,6 +3,7 @@ using System.Security.Cryptography;
 using Microsoft.AspNetCore.Mvc;
 using csharp_minitwit.Models;
 using csharp_minitwit.Services;
+using csharp_minitwit.Utils;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication;
@@ -16,7 +17,6 @@ namespace csharp_minitwit.Controllers;
 [ApiController]
 public class APIController : ControllerBase
 {
-
     private readonly IDatabaseService _databaseService;
     private readonly IConfiguration _configuration;
     private readonly string _perPage;
@@ -122,46 +122,20 @@ public class APIController : ControllerBase
             {
                 ModelState.AddModelError("Email", "You have to enter a valid email address");
             }
-            else if (await IsUsernameTaken(model.username))
+            else if (await UserHelper.IsUsernameTaken(_databaseService, model.username))
             {
                 ModelState.AddModelError("Username", "The username is already taken");
             }
             else
             {
                 //Insert user into database
-                var result = await InsertUser(model.username, model.email, model.pwd);
+                var result = await UserHelper.InsertUser(_passwordHasher, _databaseService, model.username, model.email, model.pwd);
                 //TempData["SuccessMessage"] = "You were successfully registered and can login now"; //Not needed? for the frontEnd?
                 return NoContent();
             }
         }
         return BadRequest(ModelState);
     }
-
-    private async Task<bool> IsUsernameTaken(string username)
-    {
-        var sqlQuery = "SELECT * FROM user WHERE username = @Username";
-        var parameters = new Dictionary<string, object> { { "@Username", username } };
-        var result = await _databaseService.QueryDb<dynamic>(sqlQuery, parameters);
-        return result.Count() > 0;
-    }
-
-    private async Task<dynamic> InsertUser(string username, string email, string password)
-    {
-        var sqlQuery = @"
-            INSERT INTO user (username, email, pw_hash)
-            VALUES (@Username, @Email, @Password)";
-
-        var hashedPassword = _passwordHasher.HashPassword(new UserModel(), password);
-
-        var parameters = new Dictionary<string, object>
-        {
-            { "@Username", username },
-            { "@Email", email },
-            { "@Password", hashedPassword }
-        };
-        return await _databaseService.QueryDb<dynamic>(sqlQuery, parameters);
-    }
-
 
 
     /// <summary>

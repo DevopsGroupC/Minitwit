@@ -249,14 +249,14 @@ public class HomeController : Controller
                 {
                     ModelState.AddModelError("Password2", "The two passwords do not match");
                 }
-                else if (await IsUsernameTaken(model.Username))
+                else if (await UserHelper.IsUsernameTaken(_databaseService, model.Username))
                 {
                     ModelState.AddModelError("Username", "The username is already taken");
                 }
                 else
                 {
                     //Insert user into database
-                    var result = await InsertUser(model.Username, model.Email, model.Password);
+                    var result = await UserHelper.InsertUser(_passwordHasher, _databaseService, model.Username, model.Email, model.Password);
                     return RedirectToAction("Login", new { registrationSuccess = true });
                 }
             }
@@ -270,31 +270,6 @@ public class HomeController : Controller
     public IActionResult Register()
     {
         return View();
-    }
-
-    private async Task<bool> IsUsernameTaken(string username)
-    {
-        var sqlQuery = "SELECT * FROM user WHERE username = @Username";
-        var parameters = new Dictionary<string, object> { { "@Username", username } };
-        var result = await _databaseService.QueryDb<dynamic>(sqlQuery, parameters);
-        return result.Count() > 0;
-    }
-
-    private async Task<dynamic> InsertUser(string username, string email, string password)
-    {
-        var sqlQuery = @"
-            INSERT INTO user (username, email, pw_hash)
-            VALUES (@Username, @Email, @Password)";
-
-        var hashedPassword = _passwordHasher.HashPassword(new UserModel(), password);
-
-        var parameters = new Dictionary<string, object>
-        {
-            { "@Username", username },
-            { "@Email", email },
-            { "@Password", hashedPassword }
-        };
-        return await _databaseService.QueryDb<dynamic>(sqlQuery, parameters);
     }
 
 
