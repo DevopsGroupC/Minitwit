@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Identity;
 using System.Net.Http;
+using System.Text.Json.Nodes;
 
 namespace csharp_minitwit.Controllers;
 
@@ -38,14 +39,18 @@ public class APIController : ControllerBase
         return Ok("Test");
     }
 
-    public string NotReqFromSimulator(HttpRequest request)
+    public ErrorResponse NotReqFromSimulator(HttpRequest request)
+
     {
         var fromSimulator = request.Headers["Authorization"].ToString();
         Console.WriteLine(fromSimulator);
         if (fromSimulator != "Basic c2ltdWxhdG9yOnN1cGVyX3NhZmUh")
         {
-            var error = "You are not authorized to use this resource!";
-            return error;
+            return new ErrorResponse
+            {
+                ErrorMessage = "You are not authorized to use this resource!",
+                ErrorCode = 403
+            };
         }
         return null;
     }
@@ -149,8 +154,8 @@ public class APIController : ControllerBase
 
         // Check if request is from simulator
         var notFromSimResponse = NotReqFromSimulator(Request);
-        if (notFromSimResponse != null)
-            return Forbid(notFromSimResponse);
+        if (notFromSimResponse.ErrorMessage != null)
+            return Forbid(notFromSimResponse.ErrorMessage);
 
         var sqlQuery = @"
             SELECT message.*, user.*
@@ -186,8 +191,8 @@ public class APIController : ControllerBase
 
         // Check if request is from simulator
         var notFromSimResponse = NotReqFromSimulator(Request);
-        if (notFromSimResponse != null)
-            return Forbid(notFromSimResponse);
+        if (notFromSimResponse.ErrorMessage != null)
+            return Forbid(notFromSimResponse.ErrorMessage);
 
 
         if (!string.IsNullOrEmpty(model.content))
@@ -239,6 +244,47 @@ public class APIController : ControllerBase
             };
         }).ToList();
         return Ok(filteredMsgs);
+    }
+
+
+    [HttpGet("fllws/{username}")]
+    public async Task<IActionResult> GetUserFollowers(string username)
+    {
+        var notFromSimResponse = NotReqFromSimulator(Request);
+        if (notFromSimResponse != null)
+            return Forbid(notFromSimResponse.ErrorMessage);
+
+        var userID = GetUserID(username);
+        if (userID == -1)
+            return NotFound();
+
+        var noFollowers = Convert.ToInt32(Request.Query["no"].FirstOrDefault() ?? "100");
+
+        var sqlQuery = @"
+            SELECT user.username
+            FROM user
+            INNER JOIN follower ON follower.whom_id = user.user_id
+            WHERE follower.who_id = @UserId
+            LIMIT @Limit";
+
+        var parameters = new Dictionary<string, object>
+        {
+            { "@UserId", userID },
+            { "@Limit", noFollowers }
+        };
+
+        var queryResult = await _databaseService.QueryDb<dynamic>(sqlQuery, parameters);
+        Console.WriteLine("Query result: ", queryResult);
+
+        var followerNames = queryResult.Select(row => (string)row.username).ToList();
+        Console.WriteLine("Follower names: ", noFollowers);
+
+        var followersResponse = new
+        {
+            follows = followerNames
+        };
+
+        return Ok(followersResponse);
     }
 }
 

@@ -310,8 +310,6 @@ public class HomeController : Controller
 
         var currentUserId = HttpContext.Session.GetInt32("user_id");
 
-        Console.WriteLine("Current user id: " + currentUserId);
-
         if (currentUserId.HasValue)
         {// Check if the current user is following the profile user
             var followCheckQuery = "SELECT 1 FROM follower WHERE who_id = @CurrentUserId AND whom_id = @ProfileUserId";

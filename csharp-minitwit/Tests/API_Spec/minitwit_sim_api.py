@@ -233,6 +233,7 @@ def follow(username):
 
     elif request.method == "GET":
         no_followers = request.args.get("no", type=int, default=100)
+        
         query = """SELECT user.username FROM user
                    INNER JOIN follower ON follower.whom_id=user.user_id
                    WHERE follower.who_id=?
