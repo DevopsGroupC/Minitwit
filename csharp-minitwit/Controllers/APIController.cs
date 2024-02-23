@@ -1,16 +1,8 @@
-using System.Diagnostics;
-using System.Security.Cryptography;
 using Microsoft.AspNetCore.Mvc;
 using csharp_minitwit.Models;
 using csharp_minitwit.Services;
 using csharp_minitwit.Utils;
-using System.Security.Claims;
-using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Identity;
-using System.Net.Http;
-using System.Text.Json.Nodes;
-
 
 namespace csharp_minitwit.Controllers;
 
@@ -32,19 +24,10 @@ public class APIController : ControllerBase
         _passwordHasher = new PasswordHasher<UserModel>();
     }
 
-
-
-    [HttpGet("test")]
-    public IActionResult Test()
-    {
-        return Ok("Test");
-    }
-
-    public APIErrorResponse NotReqFromSimulator(HttpRequest request)
+    protected APIErrorResponse? NotReqFromSimulator(HttpRequest request)
 
     {
         var fromSimulator = request.Headers["Authorization"].ToString();
-        Console.WriteLine(fromSimulator);
         if (fromSimulator != "Basic c2ltdWxhdG9yOnN1cGVyX3NhZmUh")
         {
             return new APIErrorResponse
@@ -56,7 +39,7 @@ public class APIController : ControllerBase
         return null;
     }
 
-    public int GetUserID(string username)
+    protected int GetUserID(string username)
     {
         var sqlQuery = "SELECT user_id FROM user WHERE username = @Username";
         var parameters = new Dictionary<string, object> { { "@Username", username } };
@@ -87,7 +70,7 @@ public class APIController : ControllerBase
         return Ok(new { latest = latestProcessedCommandID });
     }
 
-    public void updateLatest(string latest)
+    protected void updateLatest(string latest)
     {
         int parsedLatest = -1;
         try
@@ -155,7 +138,7 @@ public class APIController : ControllerBase
 
         // Check if request is from simulator
         var notFromSimResponse = NotReqFromSimulator(Request);
-        if (notFromSimResponse.ErrorMessage != null)
+        if (notFromSimResponse != null)
             return Forbid(notFromSimResponse.ErrorMessage);
 
         var sqlQuery = @"
@@ -166,10 +149,14 @@ public class APIController : ControllerBase
             ORDER BY message.pub_date DESC
             LIMIT @PerPage";
 
-        var dict = new Dictionary<string, object> { { "@PerPage", no } };
+        var dict = new Dictionary<string, object> { { "@PerPage", no > 0 ? no : _perPage } };
         var queryResult = await _databaseService.QueryDb<dynamic>(sqlQuery, dict);
 
-        Console.WriteLine("queryres" + queryResult.Count());
+        if (queryResult == null)
+        {
+            return Ok(new List<APIMessageModel>());
+        }
+
         var filteredMsgs = queryResult.Select(msg =>
         {
             var dictB = (IDictionary<string, object>)msg;
@@ -180,19 +167,19 @@ public class APIController : ControllerBase
                 user = (string)dictB["username"]
             };
         }).ToList();
-        Console.WriteLine(filteredMsgs);
+
         return Ok(filteredMsgs);
     }
 
     [HttpPost("msgs/{username}")]
-    public async Task<IActionResult> PostMessagesPerUser(string username, [FromBody] APIMessageModel model, int no, string latest)
+    public async Task<IActionResult> PostMessagesPerUser(string username, [FromBody] APIMessageModel model, string latest)
     {
         // Update latest
         updateLatest(latest);
 
         // Check if request is from simulator
         var notFromSimResponse = NotReqFromSimulator(Request);
-        if (notFromSimResponse.ErrorMessage != null)
+        if (notFromSimResponse != null)
             return Forbid(notFromSimResponse.ErrorMessage);
 
 
@@ -218,6 +205,14 @@ public class APIController : ControllerBase
     public async Task<IActionResult> GetMessagesPerUser(string username, int no, string latest)
 
     {
+        // Update latest
+        updateLatest(latest);
+
+        // Check if request is from simulator
+        var notFromSimResponse = NotReqFromSimulator(Request);
+        if (notFromSimResponse != null)
+            return Forbid(notFromSimResponse.ErrorMessage);
+
         var userID = GetUserID(username);
         if (userID == -1)
         {
@@ -231,7 +226,7 @@ public class APIController : ControllerBase
             ORDER BY message.pub_date DESC
             LIMIT @PerPage";
 
-        var dict = new Dictionary<string, object> { { "@Username", username }, { "@PerPage", no } };
+        var dict = new Dictionary<string, object> { { "@Username", username }, { "@PerPage", no > 0 ? no : _perPage } };
         var queryResult = await _databaseService.QueryDb<dynamic>(sqlQuery, dict);
 
         var filteredMsgs = queryResult.Select(msg =>
@@ -249,7 +244,7 @@ public class APIController : ControllerBase
 
 
     [HttpGet("fllws/{username}")]
-    public async Task<IActionResult> GetUserFollowers(string username, string latest)
+    public async Task<IActionResult> GetUserFollowers(string username, string latest, int no)
     {
         updateLatest(latest);
 
@@ -261,8 +256,6 @@ public class APIController : ControllerBase
         if (userID == -1)
             return NotFound();
 
-        var noFollowers = Convert.ToInt32(Request.Query["no"].FirstOrDefault() ?? "100");
-
         var sqlQuery = @"
             SELECT user.username
             FROM user
@@ -273,7 +266,7 @@ public class APIController : ControllerBase
         var parameters = new Dictionary<string, object>
         {
             { "@UserId", userID },
-            { "@Limit", noFollowers }
+            { "@Limit", no > 0 ? no : _perPage  }
         };
 
         var queryResult = await _databaseService.QueryDb<dynamic>(sqlQuery, parameters);
@@ -287,22 +280,20 @@ public class APIController : ControllerBase
 
         return Ok(followersResponse);
     }
-public class FollowActionDto
-{
-    public string? Follow { get; set; }
-    public string? Unfollow { get; set; }
-}
-
-
+    public class FollowActionDto
+    {
+        public string? Follow { get; set; }
+        public string? Unfollow { get; set; }
+    }
 
     [HttpPost("fllws/{username}")]
-    public async Task<IActionResult> FollowUser(string username, string latest, [FromBody] FollowActionDto followAction )
+    public async Task<IActionResult> FollowUser(string username, string latest, [FromBody] FollowActionDto followAction)
     {
         updateLatest(latest);
 
         // Check if request is from simulator
         var notFromSimResponse = NotReqFromSimulator(Request);
-       if (notFromSimResponse != null)
+        if (notFromSimResponse != null)
             return Forbid(notFromSimResponse.ErrorMessage);
 
         var userID = GetUserID(username);
@@ -318,6 +309,9 @@ public class FollowActionDto
             var followsUserId = GetUserID(followsUsername);
             if (followsUserId == -1)
                 return NotFound($"User '{followsUsername}' not found.");
+
+            //TODO: Implement the error handling for the case where the user is already being followed
+
 
             // Insert the follow relationship into the database
             var sqlQuery = "INSERT INTO follower (who_id, whom_id) VALUES (@WhoId, @WhomId)";
