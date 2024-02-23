@@ -4,7 +4,6 @@ namespace csharp_minitwit.Utils
 {
     public static class MessageHelper
     {
-
         public static List<MessageModel> MessageConverter(IEnumerable<dynamic>? queryResult){
         
         var messages = queryResult.Select(row =>
