@@ -14,6 +14,6 @@
     COPY --from=build /app/out .
     COPY ./Databases/schema.sql /app/Databases/schema.sql
 
-    EXPOSE 5000
+    EXPOSE 8080
 
     ENTRYPOINT ["dotnet", "csharp-minitwit.dll"]
