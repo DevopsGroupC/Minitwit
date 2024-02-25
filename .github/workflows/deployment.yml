@@ -69,7 +69,7 @@ jobs:
         run: >
           ssh $SSH_USER@$SSH_HOST
           -i ~/.ssh/do_ssh_key -o StrictHostKeyChecking=no
-          '/minitwit/deploy.sh'
+          '/csharp-minitwit/deploy.sh'
         env:
           SSH_USER: ${{ secrets.SSH_USER }}
           SSH_HOST: ${{ secrets.SSH_HOST }}
