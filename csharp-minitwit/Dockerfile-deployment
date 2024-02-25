@@ -1,0 +1,25 @@
+# Use the SDK image to build the project files
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+WORKDIR /src
+
+# Copy the solution file and the project file into the image
+COPY ["csharp-minitwit/csharp-minitwit.sln", "csharp-minitwit/"]
+COPY ["csharp-minitwit/csharp-minitwit.csproj", "csharp-minitwit/"]
+
+# Restore the NuGet packages
+RUN dotnet restore "csharp-minitwit/csharp-minitwit.sln"
+
+# Copy the rest of the source code
+COPY csharp-minitwit/ .
+
+# Publish the application
+RUN dotnet publish "csharp-minitwit.csproj" -c Release -o /app/publish
+
+# Use the runtime image to create the final image
+FROM mcr.microsoft.com/dotnet/aspnet:8.0
+WORKDIR /app
+ENV ASPNETCORE_ENVIRONMENT=Development
+COPY --from=build /app/publish .
+COPY csharp-minitwit/Databases/schema.sql ./Databases/schema.sql
+EXPOSE 8080
+ENTRYPOINT ["dotnet", "csharp-minitwit.dll"]
