@@ -1,0 +1,14 @@
+version: '3.3'
+
+networks:
+  main:
+
+services:
+
+  minitwitimage:
+    image: ${DOCKER_USERNAME}/csharptwitimage
+    container_name: csharp-minitwit
+    networks:
+      - main
+    ports:
+        - '5000:5000'
