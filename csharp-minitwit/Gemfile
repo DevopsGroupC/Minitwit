@@ -1,0 +1,1 @@
+gem 'dotenv', groups: [:development, :test]
