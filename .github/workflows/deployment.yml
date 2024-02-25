@@ -42,7 +42,7 @@ jobs:
         uses: docker/build-push-action@v2
         with:
           context: .
-          file: ./Dockerfile
+          file: ./csharp-minitwit/Dockerfile
           push: true
           tags: ${{ secrets.DOCKER_USERNAME }}/csharptwitimage:latest
           cache-from: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/csharptwitimage:webbuildcache
