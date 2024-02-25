@@ -12,7 +12,7 @@
     ENV ASPNETCORE_ENVIRONMENT=Development
 
     COPY --from=build /app/out .
-    COPY ./csharp-minitwit/Databases/schema.sql /app/Databases/schema.sql
+    COPY ./Databases/schema.sql /app/Databases/schema.sql
 
     EXPOSE 8080
 
