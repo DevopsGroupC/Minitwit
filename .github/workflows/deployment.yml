@@ -48,6 +48,8 @@ jobs:
           cache-from: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/csharptwitimage:webbuildcache
           cache-to: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/csharptwitimage:webbuildcache,mode=max
 
+      #TODO: Add / adjust tests from py api maybe?
+
       # - name: Test minitwit
       #   run: |
       #     docker build -t $DOCKER_USERNAME/minitwittestimage -f Dockerfile-minitwit-tests .
