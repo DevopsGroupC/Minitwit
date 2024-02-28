@@ -72,10 +72,9 @@ public class APIController : ControllerBase
 
     protected void updateLatest(string latest)
     {
-        if (latest != null)
-        {
-            System.IO.File.WriteAllText("Services/latest_processed_sim_action_id.txt", latest.ToString());
-        }
+       
+        System.IO.File.WriteAllText("Services/latest_processed_sim_action_id.txt", latest.ToString());
+
     }
 
     /// <summary>
