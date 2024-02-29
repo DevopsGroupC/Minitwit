@@ -6,7 +6,7 @@ on:
     # Run workflow every time something is pushed to the main branch
     branches:
       - main
-      - master
+      - feature/62-fix-path-to-deploysh-in-github-actions-workflow-file
   # allow manual triggers for now too
   #test
   workflow_dispatch:
