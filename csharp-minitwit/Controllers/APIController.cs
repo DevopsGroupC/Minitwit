@@ -24,20 +24,30 @@ public class APIController : ControllerBase
         _passwordHasher = new PasswordHasher<UserModel>();
     }
 
-    protected APIErrorResponse? NotReqFromSimulator(HttpRequest request)
-
+    protected bool NotReqFromSimulator(HttpRequest request)
     {
-        var fromSimulator = request.Headers["Authorization"].ToString();
-        if (fromSimulator != "Basic c2ltdWxhdG9yOnN1cGVyX3NhZmUh")
+        if (request.Headers.TryGetValue("Authorization", out var fromSimulator))
         {
-            return new APIErrorResponse
+            if (fromSimulator.ToString() == "Basic c2ltdWxhdG9yOnN1cGVyX3NhZmUh")
             {
-                ErrorMessage = "You are not authorized to use this resource!",
-                ErrorCode = 403
-            };
+                return true;
+            }
         }
-        return null;
+        return false;
     }
+
+    // {
+    //     var fromSimulator = request.Headers["Authorization"].ToString();
+    //     if (fromSimulator != "Basic c2ltdWxhdG9yOnN1cGVyX3NhZmUh")
+    //     {
+    //         return new APIErrorResponse
+    //         {
+    //             ErrorMessage = "You are not authorized to use this resource!",
+    //             ErrorCode = 403
+    //         };
+    //     }
+    //     return null;
+    // }
 
     protected int GetUserID(string username)
     {
@@ -70,20 +80,11 @@ public class APIController : ControllerBase
         return Ok(new { latest = latestProcessedCommandID });
     }
 
-    protected void updateLatest(string latest)
+    protected void updateLatest(int? latest)
     {
-        int parsedLatest = -1;
-        try
-        {
-            parsedLatest = int.Parse(latest);
-        }
-        catch (System.Exception)
-        {
-        }
-        if (parsedLatest != -1)
-        {
-            System.IO.File.WriteAllText("Services/latest_processed_sim_action_id.txt", parsedLatest.ToString());
-        }
+
+        System.IO.File.WriteAllText("Services/latest_processed_sim_action_id.txt", latest.ToString());
+
     }
 
     /// <summary>
@@ -91,7 +92,7 @@ public class APIController : ControllerBase
     /// </summary>
     /// 
     [HttpPost("register")]
-    public async Task<IActionResult> Register([FromBody] APIRegisterModel model, string latest)
+    public async Task<IActionResult> Register([FromBody] APIRegisterModel model, int? latest)
     {
 
         updateLatest(latest);
@@ -131,15 +132,17 @@ public class APIController : ControllerBase
     /// Registers a new message for the user.
     /// </summary>
     [HttpGet("msgs")]
-    public async Task<IActionResult> Messages(string latest, int no)
+    public async Task<IActionResult> Messages(int no, int? latest)
     {
-        // Update latest
-        updateLatest(latest);
+        if (latest != null)
+        {
+            updateLatest(latest);
+        }
 
         // Check if request is from simulator
         var notFromSimResponse = NotReqFromSimulator(Request);
-        if (notFromSimResponse != null)
-            return Forbid(notFromSimResponse.ErrorMessage);
+        if (!notFromSimResponse)
+            return StatusCode(401);
 
         var sqlQuery = @"
             SELECT message.*, user.*
@@ -172,15 +175,17 @@ public class APIController : ControllerBase
     }
 
     [HttpPost("msgs/{username}")]
-    public async Task<IActionResult> PostMessagesPerUser(string username, [FromBody] APIMessageModel model, string latest)
+    public async Task<IActionResult> PostMessagesPerUser(string username, [FromBody] APIMessageModel model, int? latest)
     {
-        // Update latest
-        updateLatest(latest);
+        if (latest != null)
+        {
+            updateLatest(latest);
+        }
 
         // Check if request is from simulator
         var notFromSimResponse = NotReqFromSimulator(Request);
-        if (notFromSimResponse != null)
-            return Forbid(notFromSimResponse.ErrorMessage);
+        if (!notFromSimResponse)
+            return StatusCode(401);
 
 
         if (!string.IsNullOrEmpty(model.content))
@@ -202,16 +207,18 @@ public class APIController : ControllerBase
 
 
     [HttpGet("msgs/{username}")]
-    public async Task<IActionResult> GetMessagesPerUser(string username, int no, string latest)
+    public async Task<IActionResult> GetMessagesPerUser(string username, int no, int? latest)
 
     {
-        // Update latest
-        updateLatest(latest);
+        if (latest != null)
+        {
+            updateLatest(latest);
+        }
 
         // Check if request is from simulator
         var notFromSimResponse = NotReqFromSimulator(Request);
-        if (notFromSimResponse != null)
-            return Forbid(notFromSimResponse.ErrorMessage);
+        if (!notFromSimResponse)
+            return StatusCode(401);
 
         var userID = GetUserID(username);
         if (userID == -1)
@@ -244,13 +251,16 @@ public class APIController : ControllerBase
 
 
     [HttpGet("fllws/{username}")]
-    public async Task<IActionResult> GetUserFollowers(string username, string latest, int no)
+    public async Task<IActionResult> GetUserFollowers(string username, int no, int? latest)
     {
-        updateLatest(latest);
+        if (latest != null)
+        {
+            updateLatest(latest);
+        }
 
         var notFromSimResponse = NotReqFromSimulator(Request);
-        if (notFromSimResponse != null)
-            return Forbid(notFromSimResponse.ErrorMessage);
+        if (!notFromSimResponse)
+            return StatusCode(401);
 
         var userID = GetUserID(username);
         if (userID == -1)
@@ -287,14 +297,17 @@ public class APIController : ControllerBase
     }
 
     [HttpPost("fllws/{username}")]
-    public async Task<IActionResult> FollowUser(string username, string latest, [FromBody] FollowActionDto followAction)
+    public async Task<IActionResult> FollowUser(string username, [FromBody] FollowActionDto followAction, int? latest)
     {
-        updateLatest(latest);
+        if (latest != null)
+        {
+            updateLatest(latest);
+        }
 
         // Check if request is from simulator
         var notFromSimResponse = NotReqFromSimulator(Request);
-        if (notFromSimResponse != null)
-            return Forbid(notFromSimResponse.ErrorMessage);
+        if (!notFromSimResponse)
+            return StatusCode(401);
 
         var userID = GetUserID(username);
         if (userID == -1)
