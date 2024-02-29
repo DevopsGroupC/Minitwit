@@ -6,7 +6,6 @@ on:
     # Run workflow every time something is pushed to the main branch
     branches:
       - main
-      - master
   # allow manual triggers for now too
   #test
   workflow_dispatch:
@@ -70,7 +69,7 @@ jobs:
         run: >
           ssh $SSH_USER@$SSH_HOST
           -i ~/.ssh/do_ssh_key -o StrictHostKeyChecking=no
-          '/csharp-minitwit/deploy.sh'
+          '~/csharp-minitwit/deploy.sh'
         env:
           SSH_USER: ${{ secrets.SSH_USER }}
           SSH_HOST: ${{ secrets.SSH_HOST }}
