@@ -12,3 +12,5 @@ services:
       - main
     ports:
         - '5000:8080'
+    volumes:
+      - ~/mnt/database:/app/Databases
