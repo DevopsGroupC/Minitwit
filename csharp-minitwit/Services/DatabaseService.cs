@@ -12,62 +12,66 @@ public class DatabaseService : IDatabaseService
     {
         _logger = logger;
         _connectionString = configuration.GetConnectionString("DefaultConnection")!;
+        Console.WriteLine($"Connection string: {_connectionString}");
+        _logger.LogInformation($"Connection string: {_connectionString}");
         var dbFilePath = new SqliteConnectionStringBuilder(_connectionString).DataSource;
-        if (!File.Exists(dbFilePath) )
+        Console.WriteLine($"Data source: {dbFilePath}");
+        _logger.LogInformation($"Data source: {dbFilePath}");
+        if (!File.Exists(dbFilePath))
         {
             initDb(dbFilePath);
         }
     }
 
-private void initDb(string dbFilePath)
-{
-    try
+    private void initDb(string dbFilePath)
     {
-        var dbDirectory = Path.GetDirectoryName(dbFilePath);
-        var parentDirectory = Directory.GetParent(dbDirectory!)!.FullName;
-        var sqlFilePath = Path.Combine(parentDirectory, "schema.sql"); // TODO: don't hardcode schema.sql
-
-        // TODO: remove logging statements
-        _logger.LogInformation($"Creating database at {dbFilePath}");
-        _logger.LogInformation($"Getting schema from {sqlFilePath}");
-        if (Directory.Exists(dbDirectory))
+        try
         {
-            foreach (var file in Directory.GetFiles(dbDirectory))
+            var dbDirectory = Path.GetDirectoryName(dbFilePath);
+            var parentDirectory = Directory.GetParent(dbDirectory!)!.FullName;
+            var sqlFilePath = Path.Combine(parentDirectory, "schema.sql"); // TODO: don't hardcode schema.sql
+
+            // TODO: remove logging statements
+            _logger.LogInformation($"Creating database at {dbFilePath}");
+            _logger.LogInformation($"Getting schema from {sqlFilePath}");
+            if (Directory.Exists(dbDirectory))
             {
-                _logger.LogInformation($"Found file in database directory: {file}");
+                foreach (var file in Directory.GetFiles(dbDirectory))
+                {
+                    _logger.LogInformation($"Found file in database directory: {file}");
+                }
+            }
+            var sqlFileDirectory = Path.GetDirectoryName(sqlFilePath);
+            if (sqlFileDirectory != null && Directory.Exists(sqlFileDirectory))
+            {
+                foreach (var file in Directory.GetFiles(sqlFileDirectory))
+                {
+                    _logger.LogInformation($"Found file in SQL schema directory: {file}");
+                }
+            }
+
+            if (!Directory.Exists(dbDirectory))
+            {
+                Directory.CreateDirectory(dbDirectory!);
+            }
+
+            using (var connection = new SqliteConnection(_connectionString))
+            {
+                connection.Open();
+
+                var sqlCommands = File.ReadAllText(sqlFilePath);
+                var command = connection.CreateCommand();
+
+                command.CommandText = sqlCommands;
+                command.ExecuteNonQuery();
             }
         }
-        var sqlFileDirectory = Path.GetDirectoryName(sqlFilePath);
-        if (sqlFileDirectory != null && Directory.Exists(sqlFileDirectory))
+        catch (Exception ex)
         {
-            foreach (var file in Directory.GetFiles(sqlFileDirectory))
-            {
-                _logger.LogInformation($"Found file in SQL schema directory: {file}");
-            }
-        }
-
-        if (!Directory.Exists(dbDirectory))
-        {
-            Directory.CreateDirectory(dbDirectory!);
-        }
-
-        using (var connection = new SqliteConnection(_connectionString))
-        {
-            connection.Open();
-
-            var sqlCommands = File.ReadAllText(sqlFilePath);
-            var command = connection.CreateCommand();
-
-            command.CommandText = sqlCommands;
-            command.ExecuteNonQuery();
+            _logger.LogError($"Error creating the database at {dbFilePath}: {ex.Message}");
+            throw;
         }
     }
-    catch (Exception ex)
-    {
-        _logger.LogError($"Error creating the database at {dbFilePath}: {ex.Message}");
-        throw;
-    }
-}
 
     public async Task<IEnumerable<T>> QueryDb<T>(string sqlQuery, Dictionary<string, object> parameters)
     {
