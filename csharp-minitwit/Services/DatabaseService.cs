@@ -19,7 +19,8 @@ public class DatabaseService : IDatabaseService
     private void initDb(string dbFilePath)
     {
         var directory = Path.GetDirectoryName(dbFilePath);
-        var sqlFilePath = Path.Combine(directory!, "schema.sql"); //Todo: don't hardcode.
+        var parentDirectory = Directory.GetParent(directory!)!.FullName;
+        var sqlFilePath = Path.Combine(parentDirectory, "schema.sql"); //Todo: don't hardcode.
         
         if (!Directory.Exists(directory))
         {
