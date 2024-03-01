@@ -2,10 +2,14 @@
 name: Continuous Deployment #shoutout to the exercises session
 
 on:
-  push:
+  pull_request:
+    types:
+      - auto_merge_enabled    
     # Run workflow every time something is pushed to the main branch
     branches:
       - main
+
+  #source: https://github.com/orgs/community/discussions/26724
   # allow manual triggers for now too
   #test
   workflow_dispatch:
@@ -69,7 +73,7 @@ jobs:
         run: >
           ssh $SSH_USER@$SSH_HOST
           -i ~/.ssh/do_ssh_key -o StrictHostKeyChecking=no
-          '~/csharp-minitwit/deploy.sh'
+          '/csharp-minitwit/deploy.sh'
         env:
           SSH_USER: ${{ secrets.SSH_USER }}
           SSH_HOST: ${{ secrets.SSH_HOST }}
