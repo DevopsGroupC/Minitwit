@@ -4,7 +4,7 @@ name: Continuous Deployment #shoutout to the exercises session
 on:
   pull_request:
     types:
-      - auto_merge_enabled    
+      - auto_merge_enabled
     # Run workflow every time something is pushed to the main branch
     branches:
       - main
