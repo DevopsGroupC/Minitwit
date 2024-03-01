@@ -24,6 +24,7 @@ builder.Services.AddSession(options =>
 });
 
 builder.Services.AddControllersWithViews();
+builder.Services.AddControllers();
 builder.Services.AddSwaggerGen(c =>
     {
         // Set the comments path for the Swagger JSON and UI.
@@ -46,7 +47,7 @@ if (!app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
+// app.UseHttpsRedirection();
 app.UseStaticFiles();
 
 app.UseRouting();
@@ -60,5 +61,6 @@ app.UseCookiePolicy();
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{id?}/{action=Timeline}/");
+app.MapControllers();
 
 app.Run();

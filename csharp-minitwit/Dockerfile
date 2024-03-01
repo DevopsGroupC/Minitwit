@@ -13,7 +13,7 @@
 
     COPY --from=build /app/out .
     COPY ./Databases/schema.sql /app/Databases/schema.sql
-
-    EXPOSE 8080
+    COPY ./Services/latest_processed_sim_action_id.txt /app/Services/latest_processed_sim_action_id.txt
+    EXPOSE 5000
 
     ENTRYPOINT ["dotnet", "csharp-minitwit.dll"]
