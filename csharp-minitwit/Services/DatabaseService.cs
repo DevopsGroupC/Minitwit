@@ -12,11 +12,7 @@ public class DatabaseService : IDatabaseService
     {
         _logger = logger;
         _connectionString = configuration.GetConnectionString("DefaultConnection")!;
-        Console.WriteLine($"Connection string: {_connectionString}");
-        _logger.LogInformation($"Connection string: {_connectionString}");
         var dbFilePath = new SqliteConnectionStringBuilder(_connectionString).DataSource;
-        Console.WriteLine($"Data source: {dbFilePath}");
-        _logger.LogInformation($"Data source: {dbFilePath}");
         if (!File.Exists(dbFilePath))
         {
             initDb(dbFilePath);
@@ -30,25 +26,6 @@ public class DatabaseService : IDatabaseService
             var dbDirectory = Path.GetDirectoryName(dbFilePath);
             var parentDirectory = Directory.GetParent(dbDirectory!)!.FullName;
             var sqlFilePath = Path.Combine(parentDirectory, "schema.sql"); // TODO: don't hardcode schema.sql
-
-            // TODO: remove logging statements
-            _logger.LogInformation($"Creating database at {dbFilePath}");
-            _logger.LogInformation($"Getting schema from {sqlFilePath}");
-            if (Directory.Exists(dbDirectory))
-            {
-                foreach (var file in Directory.GetFiles(dbDirectory))
-                {
-                    _logger.LogInformation($"Found file in database directory: {file}");
-                }
-            }
-            var sqlFileDirectory = Path.GetDirectoryName(sqlFilePath);
-            if (sqlFileDirectory != null && Directory.Exists(sqlFileDirectory))
-            {
-                foreach (var file in Directory.GetFiles(sqlFileDirectory))
-                {
-                    _logger.LogInformation($"Found file in SQL schema directory: {file}");
-                }
-            }
 
             if (!Directory.Exists(dbDirectory))
             {
