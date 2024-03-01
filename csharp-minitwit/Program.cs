@@ -15,6 +15,9 @@ builder.Services.Configure<CookiePolicyOptions>(options =>
     options.MinimumSameSitePolicy = SameSiteMode.None;
 });
 
+// Setup logging to console
+builder.Logging.AddConsole();
+
 builder.Services.AddSession(options =>
 {
     options.Cookie.Name = ".minitwit.Session";

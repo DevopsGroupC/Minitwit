@@ -6,11 +6,14 @@ namespace csharp_minitwit.Services;
 public class DatabaseService : IDatabaseService
 {
     private readonly string _connectionString;
-    public DatabaseService(IConfiguration configuration)
+    private readonly ILogger _logger;
+
+    public DatabaseService(IConfiguration configuration, ILogger<DatabaseService> logger)
     {
+        _logger = logger;
         _connectionString = configuration.GetConnectionString("DefaultConnection")!;
         var dbFilePath = new SqliteConnectionStringBuilder(_connectionString).DataSource;
-        if (!File.Exists(dbFilePath) )
+        if (!File.Exists(dbFilePath))
         {
             initDb(dbFilePath);
         }
@@ -18,24 +21,32 @@ public class DatabaseService : IDatabaseService
 
     private void initDb(string dbFilePath)
     {
-        var directory = Path.GetDirectoryName(dbFilePath);
-        var parentDirectory = Directory.GetParent(directory!)!.FullName;
-        var sqlFilePath = Path.Combine(parentDirectory, "schema.sql"); //Todo: don't hardcode.
-        
-        if (!Directory.Exists(directory))
+        try
         {
-            Directory.CreateDirectory(directory!);
+            var dbDirectory = Path.GetDirectoryName(dbFilePath);
+            var parentDirectory = Directory.GetParent(dbDirectory!)!.FullName;
+            var sqlFilePath = Path.Combine(parentDirectory, "schema.sql"); // TODO: don't hardcode schema.sql
+
+            if (!Directory.Exists(dbDirectory))
+            {
+                Directory.CreateDirectory(dbDirectory!);
+            }
+
+            using (var connection = new SqliteConnection(_connectionString))
+            {
+                connection.Open();
+
+                var sqlCommands = File.ReadAllText(sqlFilePath);
+                var command = connection.CreateCommand();
+
+                command.CommandText = sqlCommands;
+                command.ExecuteNonQuery();
+            }
         }
-
-        using (var connection = new SqliteConnection(_connectionString))
+        catch (Exception ex)
         {
-            connection.Open();
-
-            var sqlCommands = File.ReadAllText(sqlFilePath);
-            var command = connection.CreateCommand();
-
-            command.CommandText = sqlCommands;
-            command.ExecuteNonQuery();
+            _logger.LogError($"Error creating the database at {dbFilePath}: {ex.Message}");
+            throw;
         }
     }
 
