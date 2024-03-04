@@ -1,0 +1,14 @@
+version: '3.3'
+
+networks:
+  main:
+
+services:
+
+  minitwitimage:
+    image: ${DOCKER_USERNAME}/csharptwit-preproduction
+    container_name: csharp-preproduction-minitwit
+    networks:
+      - main
+    ports:
+        - '5000:8080'

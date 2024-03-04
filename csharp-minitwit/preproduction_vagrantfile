@@ -6,10 +6,10 @@ Vagrant.configure("2") do |config|
   config.vm.box_url = "https://github.com/devopsgroup-io/vagrant-digitalocean/raw/master/box/digital_ocean.box"
   config.ssh.private_key_path = '~/.ssh/preproduction'
 
-  config.vm.synced_folder "remote_files", "/csharp-preproduction-minitwit", type: "rsync"
+  config.vm.synced_folder "remote_files_preproduction", "/csharp-minitwit", type: "rsync"
   config.vm.synced_folder '.', '/vagrant', disabled: true
 
-  config.vm.define "csharp-preproduction-minitwit", primary: true do |server|
+  config.vm.define "csharp-minitwit", primary: true do |server|
 
     server.vm.provider :digital_ocean do |provider|
       provider.ssh_key_name = "preproduction"
@@ -60,7 +60,7 @@ Vagrant.configure("2") do |config|
     chmod +x /csharp-minitwit/deploy.sh
 
     echo -e "\nVagrant setup done ..."
-    echo -e "csharp-minitwit will later be accessible at http://$(hostname -I | awk '{print $1}'):5000"
+    echo -e "/csharp-minitwit will later be accessible at http://$(hostname -I | awk '{print $1}'):5000"
     SHELL
   end
 end
