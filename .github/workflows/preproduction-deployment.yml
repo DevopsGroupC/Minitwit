@@ -5,13 +5,6 @@ on:
   push: 
     branches:
       - develop
-      - feature/set-a-preproduction-server-that-uses-develop-branch
-  pull_request:
-    types:
-      - auto_merge_enabled
-    # Run workflow every time something is pushed to the main branch
-    branches:
-      - develop
 
   #source: https://github.com/orgs/community/discussions/26724
   # allow manual triggers for now too
