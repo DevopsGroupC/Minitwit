@@ -2,6 +2,10 @@
 name: Continuous Deployment #shoutout to the exercises session
 
 on:
+  push: 
+    branches:
+      - develop
+      - feature/set-a-preproduction-server-that-uses-develop-branch
   pull_request:
     types:
       - auto_merge_enabled
@@ -19,9 +23,9 @@ on:
 # https://github.com/your_username/itu-minitwit-ci/settings/secrets/actions
 # DOCKER_USERNAME
 # DOCKER_PASSWORD
-# SSH_USER
-# SSH_KEY
-# SSH_HOST
+# SSH_USER = root
+# SSH_KEY_PRE
+# SSH_HOST_PRE
 
 jobs:
   build:
@@ -66,7 +70,7 @@ jobs:
           echo "$SSH_KEY" > ~/.ssh/preproduction
           chmod 600 ~/.ssh/preproduction
         env:
-          SSH_KEY: ${{ secrets.SSH_KEY }}
+          SSH_KEY: ${{ secrets.SSH_KEY_PRE }}
 
       - name: Deploy to server
         # Configure the ~./bash_profile and deploy.sh file on the Vagrantfile
@@ -76,4 +80,4 @@ jobs:
           '/csharp-minitwit/deploy.sh'
         env:
           SSH_USER: ${{ secrets.SSH_USER }}
-          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_HOST: ${{ secrets.SSH_HOST_PRE }}
