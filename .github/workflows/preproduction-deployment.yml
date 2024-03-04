@@ -1,5 +1,5 @@
 ---
-name: Continuous Deployment #shoutout to the exercises session
+name: Preproduction Deployment #shoutout to the exercises session
 
 on:
   push: 

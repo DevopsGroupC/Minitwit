@@ -1,5 +1,5 @@
 ---
-name: Continuous Deployment #shoutout to the exercises session
+name: Production Deployment #shoutout to the exercises session
 
 on:
   pull_request:
