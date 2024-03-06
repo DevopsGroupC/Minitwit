@@ -1,0 +1,5 @@
+{
+  "devDependencies": {
+    "semantic-release-github-actions-tags": "^1.0.3"
+  }
+}
