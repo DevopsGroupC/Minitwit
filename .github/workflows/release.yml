@@ -3,7 +3,11 @@ name: Release
 
 on:
   ## Only manually release for now
-  workflow_dispatch:
+ ## workflow_dispatch:
+  push:
+    branches:
+      ##- main
+      - feature/68-automatic-release-workflow
 
 
 jobs:
