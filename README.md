@@ -108,12 +108,25 @@ Run using `dotnet`:
 ```sh
 dotnet run
 ```
-Run using `docker`:
+Run using `docker` - runs only the app:
 ```sh
 docker build -t csharp-minitwit .
 docker run -p 5000:8080 csharp-minitwit
 ```
 At this point, the application can be accessed using the link provided in the terminal (http://localhost:5000). Furthermore, API documentation can be accessed at http://localhost:5000/swagger.
+
+Run using `docker-compose` - runs multiple development services, such as Prometheus, Grafana, etc.:
+```sh
+docker-compose up
+```
+
+### Monitoring
+| Service    | Endpoint |
+| -------- | ------- |
+| Built-in metrics  | http://localhost:5000/metrics    |
+| Prometheus | http://localhost:9090     |
+| Grafana    | http://localhost:3000    |
+
 
 #### csharp-minitwit tests
 Tests for `csharp-minitwit` can be run by opening a new terminal and cd into the test folder:
