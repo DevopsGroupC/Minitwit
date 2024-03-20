@@ -1,27 +1,18 @@
----
-name: Continuous Deployment #shoutout to the exercises session
+name: Preproduction Deployment #shoutout to the exercises session
 
 on:
-  pull_request:
-    types:
-      - auto_merge_enabled    
-    # Run workflow every time something is pushed to the main branch
+  push: 
     branches:
-      - main
-
-  #source: https://github.com/orgs/community/discussions/26724
-  # allow manual triggers for now too
-  #test
+      - develop
   workflow_dispatch:
-    manual: true
 
-# Remember to set the following secrets in your repository's settings:
+# The following secrets are required from the repository's settings:
 # https://github.com/your_username/itu-minitwit-ci/settings/secrets/actions
 # DOCKER_USERNAME
 # DOCKER_PASSWORD
-# SSH_USER
-# SSH_KEY
-# SSH_HOST
+# SSH_USER = root
+# SSH_KEY_PRE
+# SSH_HOST_PRE
 
 jobs:
   build:
@@ -40,15 +31,15 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v1
 
-      - name: Build and push csharptwitimage
+      - name: Build and push csharptwit-preproduction
         uses: docker/build-push-action@v2
         with:
           context: ./csharp-minitwit
-          file: ./csharp-minitwit/Dockerfile
+          file: ./csharp-minitwit/Dockerfile-pre
           push: true
-          tags: ${{ secrets.DOCKER_USERNAME }}/csharptwitimage:latest
-          cache-from: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/csharptwitimage:webbuildcache
-          cache-to: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/csharptwitimage:webbuildcache,mode=max
+          tags: ${{ secrets.DOCKER_USERNAME }}/csharptwit-preproduction:latest
+          cache-from: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/csharptwit-preproduction:webbuildcache
+          cache-to: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/csharptwit-preproduction:webbuildcache,mode=max
 
       #TODO: Add / adjust tests from py api maybe?
 
@@ -63,17 +54,17 @@ jobs:
       - name: Configure SSH
         run: |
           mkdir -p ~/.ssh/
-          echo "$SSH_KEY" > ~/.ssh/do_ssh_key
-          chmod 600 ~/.ssh/do_ssh_key
+          echo "$SSH_KEY" > ~/.ssh/preproduction
+          chmod 600 ~/.ssh/preproduction
         env:
-          SSH_KEY: ${{ secrets.SSH_KEY }}
+          SSH_KEY: ${{ secrets.SSH_KEY_PRE }}
 
       - name: Deploy to server
-        # Configure the ~./bash_profile and deploy.sh file on the Vagrantfile
+        # Calls deploy.sh to pull csharp-minitwit image from Docker Hub and spin container up.
         run: >
           ssh $SSH_USER@$SSH_HOST
-          -i ~/.ssh/do_ssh_key -o StrictHostKeyChecking=no
+          -i ~/.ssh/preproduction -o StrictHostKeyChecking=no
           '/csharp-minitwit/deploy.sh'
         env:
           SSH_USER: ${{ secrets.SSH_USER }}
-          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_HOST: ${{ secrets.SSH_HOST_PRE }}

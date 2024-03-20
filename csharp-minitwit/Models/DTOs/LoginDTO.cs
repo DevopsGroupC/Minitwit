@@ -1,6 +1,6 @@
-namespace csharp_minitwit.Models
+namespace csharp_minitwit.Models.DTOs
 {
-    public class LoginModel
+    public class LoginDTO
     {
         public required string? Username { get; set; }
         public required string? Password { get; set; }

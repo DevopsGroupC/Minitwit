@@ -1,9 +1,11 @@
+@model LoginViewModel
+@using csharp_minitwit.Models.ViewModels;
+
 @{
     ViewData["Title"] = "Sign In";
     Layout = "~/Views/Home/Layout.cshtml";
 }
 
-@model csharp_minitwit.Models.LoginModel
 
 <h2>Sign In</h2>
 @if (!ViewData.ModelState.IsValid)
