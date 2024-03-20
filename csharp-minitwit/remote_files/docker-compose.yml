@@ -1,4 +1,4 @@
-version: "3.3"
+version: "3.8"
 
 networks:
   main:
@@ -13,3 +13,24 @@ services:
       - "5000:8080"
     volumes:
       - /mnt/database:/app/Databases/volume
+
+  prometheus:
+      image: prom/prometheus
+      container_name: prometheus
+      volumes:
+        - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      ports:
+        - "9090:9090"
+      networks:
+        - main
+      # This extra host is the one being scrapped by Prometheus
+      # It is required so the scrapping endpoint is mapped to the name of the app's Docker image name and not to the containers changing ID
+      extra_hosts:
+      - "csharp-minitwit:host-gateway"
+
+  grafana:
+    image: grafana/grafana:10.2.4
+    ports:
+      - "3000:3000"
+    networks:
+      - main
