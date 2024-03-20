@@ -1,18 +1,12 @@
----
 name: Preproduction Deployment #shoutout to the exercises session
 
 on:
   push: 
     branches:
       - develop
-
-  #source: https://github.com/orgs/community/discussions/26724
-  # allow manual triggers for now too
-  #test
   workflow_dispatch:
-    manual: true
 
-# Remember to set the following secrets in your repository's settings:
+# The following secrets are required from the repository's settings:
 # https://github.com/your_username/itu-minitwit-ci/settings/secrets/actions
 # DOCKER_USERNAME
 # DOCKER_PASSWORD
@@ -66,7 +60,7 @@ jobs:
           SSH_KEY: ${{ secrets.SSH_KEY_PRE }}
 
       - name: Deploy to server
-        # Configure the ~./bash_profile and deploy.sh file on the Vagrantfile
+        # Calls deploy.sh to pull csharp-minitwit image from Docker Hub and spin container up.
         run: >
           ssh $SSH_USER@$SSH_HOST
           -i ~/.ssh/preproduction -o StrictHostKeyChecking=no
