@@ -1,6 +1,8 @@
-@model csharp_minitwit.Models.UserTimelineModel;
+@model UserTimelineViewModel
+@using csharp_minitwit.Models.ViewModels;
 @using csharp_minitwit.Utils;
-@inject IHttpContextAccessor _httpContext
+
+@inject IHttpContextAccessor _httpContext;
 
 @{
     Layout = "~/Views/Home/Layout.cshtml";
@@ -19,7 +21,7 @@
         }
         else if (actionName == "UserTimeline")
         {
-            <text>@Model.ProfileUser.username's Timeline</text>
+            <text>@Model.ProfileUser.Username's Timeline</text>
         }
         else
         {
@@ -60,7 +62,7 @@
         <div class="followstatus">
             @using System.Security.Claims
 
-            @if (Model.CurrentUserId == Model.ProfileUser.user_id)
+            @if (Model.CurrentUserId == Model.ProfileUser.UserId)
             {
                 <text>This is you!</text>
             }
@@ -69,8 +71,8 @@
                 var lookingAtUser = ViewContext.RouteData.Values["username"].ToString();
 
                 <text>You are now following &#34;@lookingAtUser&#34;
-                    <form action="/@Model.ProfileUser.username/unfollow" method="get" class="inline-form">
-                    <input type="hidden" name="username" value="@Model.ProfileUser.username" />
+                    <form action="/@Model.ProfileUser.Username/unfollow" method="get" class="inline-form">
+                    <input type="hidden" name="username" value="@Model.ProfileUser.Username" />
                      <button type="submit" class="unfollow-link">Unfollow user</button>
                     </form>
                 </text>
@@ -80,8 +82,8 @@
                 var lookingAtUser = ViewContext.RouteData.Values["username"].ToString();
 
                 <text>You are no longer following &#34;@lookingAtUser&#34;
-                    <form action="/@Model.ProfileUser.username/follow" method="get" class="inline-form">
-                    <input type="hidden" name="username" value="@Model.ProfileUser.username" />
+                    <form action="/@Model.ProfileUser.Username/follow" method="get" class="inline-form">
+                        <input type="hidden" name="username" value="@Model.ProfileUser.Username" />
                      <button type="submit" class="unfollow-link">Follow user</button>
                     </form>
                 </text>
@@ -99,17 +101,17 @@
 }}
 
 <ul class="messages">
-    @if (Model.Messages.Any())
+    @if (Model.MessagesWithAuthor.Any())
     {
-        @foreach (var message in Model.Messages)
+        @foreach (var messagesWithAuthor in Model.MessagesWithAuthor)
         {
-            var gravatarUrl = GravatarHelper.GetGravatarUrl(message.Email, 48);
+            var gravatarUrl = GravatarHelper.GetGravatarUrl(messagesWithAuthor.Author.Email, 48);
             <li>
                 <img src="@gravatarUrl" alt="Gravatar">
                 <p>
-                    <strong><a href="@Url.Action("UserTimeline", new { username = message.Username })">@message.Username</a></strong>
-                    @message.Text
-                    <small>&mdash; @DateTimeOffset.FromUnixTimeSeconds(message.PubDate).ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss")</small>
+                    <strong><a href="@Url.Action("UserTimeline", new { username = messagesWithAuthor.Author.Username })">@messagesWithAuthor.Author.Username</a></strong>
+                    @messagesWithAuthor.Message.Text
+                    <small>&mdash; @DateTimeOffset.FromUnixTimeSeconds(messagesWithAuthor.Message.PubDate).ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss")</small>
                 </p>
             </li>
         }

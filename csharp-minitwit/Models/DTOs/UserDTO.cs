@@ -1,4 +1,4 @@
-public class UserModel
+public class UserDTO
 {
     public int user_id { get; set; }
     public string username { get; set; }

@@ -1,28 +1,25 @@
 using Microsoft.AspNetCore.Mvc;
 using csharp_minitwit.Models;
-using csharp_minitwit.Services;
+using csharp_minitwit.Models.DTOs;
 using csharp_minitwit.Utils;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+using csharp_minitwit.Services.Interfaces;
+using Microsoft.EntityFrameworkCore.Query;
 
 namespace csharp_minitwit.Controllers;
 
 
 [Route("api")]
 [ApiController]
-public class APIController : ControllerBase
+public class ApiController(
+    IMessageRepository messageRepository,
+    IFollowerRepository followerRepository,
+    IUserRepository userRepository,
+    IConfiguration configuration)
+    : ControllerBase
 {
-    private readonly IDatabaseService _databaseService;
-    private readonly IConfiguration _configuration;
-    private readonly string _perPage;
-    private readonly PasswordHasher<UserModel> _passwordHasher;
-
-    public APIController(IDatabaseService databaseService, IConfiguration configuration)
-    {
-        _databaseService = databaseService;
-        _configuration = configuration;
-        _perPage = configuration.GetValue<string>("Constants:PerPage")!;
-        _passwordHasher = new PasswordHasher<UserModel>();
-    }
+    private readonly string _perPage = configuration.GetValue<string>("Constants:PerPage")!;
 
     protected bool NotReqFromSimulator(HttpRequest request)
     {
@@ -36,38 +33,15 @@ public class APIController : ControllerBase
         return false;
     }
 
-    // {
-    //     var fromSimulator = request.Headers["Authorization"].ToString();
-    //     if (fromSimulator != "Basic c2ltdWxhdG9yOnN1cGVyX3NhZmUh")
-    //     {
-    //         return new APIErrorResponse
-    //         {
-    //             ErrorMessage = "You are not authorized to use this resource!",
-    //             ErrorCode = 403
-    //         };
-    //     }
-    //     return null;
-    // }
-
-    protected int GetUserID(string username)
+    protected async Task<int?> GetUserIdAsync(string username)
     {
-        var sqlQuery = "SELECT user_id FROM user WHERE username = @Username";
-        var parameters = new Dictionary<string, object> { { "@Username", username } };
-        var result = _databaseService.QueryDb<int>(sqlQuery, parameters);
-
-
-
-        if (result.Result.Count() == 0)
-        {
-            return -1;
-        }
-        return result.Result.FirstOrDefault();
+        return await userRepository.GetUserIdAsync(username);
     }
 
     [HttpGet("latest")]
     public IActionResult GetLatest()
     {
-        var latestProcessedCommandID = 0;
+        int latestProcessedCommandID;
         try
         {
             var latest = System.IO.File.ReadAllText("Services/latest_processed_sim_action_id.txt");
@@ -80,26 +54,23 @@ public class APIController : ControllerBase
         return Ok(new { latest = latestProcessedCommandID });
     }
 
-    protected void updateLatest(int? latest)
+    protected void UpdateLatest(int? latest)
     {
 
         System.IO.File.WriteAllText("Services/latest_processed_sim_action_id.txt", latest.ToString());
 
     }
 
-    /// <summary>
-    /// Registers a new user.
-    /// </summary>
-    /// 
     [HttpPost("register")]
     public async Task<IActionResult> Register([FromBody] APIRegisterModel model, int? latest)
     {
 
-        updateLatest(latest);
+        UpdateLatest(latest);
 
         if (ModelState.IsValid)
         {
             //Validate form inputs
+            //Todo: This can be done in the APIRegisterModel
             if (string.IsNullOrEmpty(model.username))
             {
                 ModelState.AddModelError("Username", "You have to enter a username");
@@ -112,64 +83,38 @@ public class APIController : ControllerBase
             {
                 ModelState.AddModelError("Email", "You have to enter a valid email address");
             }
-            else if (await UserHelper.IsUsernameTaken(_databaseService, model.username))
+            else if (await userRepository.UserExists(model.username))
             {
                 ModelState.AddModelError("Username", "The username is already taken");
             }
+            else if (await userRepository.InsertUser(model.username, model.email, model.pwd))
+            {
+                return NoContent();
+            }
             else
             {
-                //Insert user into database
-                var result = await UserHelper.InsertUser(_passwordHasher, _databaseService, model.username, model.email, model.pwd);
-                //TempData["SuccessMessage"] = "You were successfully registered and can login now"; //Not needed? for the frontEnd?
-                return NoContent();
+                return StatusCode(StatusCodes.Status500InternalServerError);
             }
         }
         return BadRequest(ModelState);
     }
 
-
-    /// <summary>
-    /// Registers a new message for the user.
-    /// </summary>
     [HttpGet("msgs")]
     public async Task<IActionResult> Messages(int no, int? latest)
     {
         if (latest != null)
         {
-            updateLatest(latest);
+            UpdateLatest(latest);
         }
 
         // Check if request is from simulator
         var notFromSimResponse = NotReqFromSimulator(Request);
         if (!notFromSimResponse)
-            return StatusCode(401);
+            return Unauthorized();
 
-        var sqlQuery = @"
-            SELECT message.*, user.*
-            FROM message
-            INNER JOIN user ON message.author_id = user.user_id
-            WHERE message.flagged = 0
-            ORDER BY message.pub_date DESC
-            LIMIT @PerPage";
+        int messagesToFetch = no > 0 ? no : int.Parse(_perPage);
 
-        var dict = new Dictionary<string, object> { { "@PerPage", no > 0 ? no : _perPage } };
-        var queryResult = await _databaseService.QueryDb<dynamic>(sqlQuery, dict);
-
-        if (queryResult == null)
-        {
-            return Ok(new List<APIMessageModel>());
-        }
-
-        var filteredMsgs = queryResult.Select(msg =>
-        {
-            var dictB = (IDictionary<string, object>)msg;
-            return new APIMessageModel
-            {
-                content = (string)dictB["text"],
-                pub_date = (long)dictB["pub_date"],
-                user = (string)dictB["username"]
-            };
-        }).ToList();
+        var filteredMsgs = await messageRepository.GetApiMessagesAsync(messagesToFetch);
 
         return Ok(filteredMsgs);
     }
@@ -179,74 +124,54 @@ public class APIController : ControllerBase
     {
         if (latest != null)
         {
-            updateLatest(latest);
+            UpdateLatest(latest);
         }
 
         // Check if request is from simulator
         var notFromSimResponse = NotReqFromSimulator(Request);
         if (!notFromSimResponse)
-            return StatusCode(401);
-
+            return Unauthorized();
 
         if (!string.IsNullOrEmpty(model.content))
         {
-            var query = @"INSERT INTO message (author_id, text, pub_date, flagged)  
-                            VALUES (@Author_id, @Text, @Pub_date, @Flagged)";
+            var userId = await GetUserIdAsync(username);
+            if (!userId.HasValue)
+            {
+                return BadRequest("Invalid username.");
+            }
 
-            var parameters = new Dictionary<string, object> {
-            {"@Author_id", GetUserID(username)},
-            {"@Text", model.content},
-            {"@Pub_date", (long)DateTimeOffset.Now.ToUnixTimeSeconds()},
-            {"@Flagged", 0}
-        };
-            await _databaseService.QueryDb<dynamic>(query, parameters);
+            await messageRepository.AddMessageAsync(model.content, userId.Value);
+
             return NoContent();
         }
-        return BadRequest();
-    }
 
+        return BadRequest("Content cannot be empty.");
+    }
 
     [HttpGet("msgs/{username}")]
     public async Task<IActionResult> GetMessagesPerUser(string username, int no, int? latest)
-
     {
         if (latest != null)
         {
-            updateLatest(latest);
+            UpdateLatest(latest);
         }
 
         // Check if request is from simulator
         var notFromSimResponse = NotReqFromSimulator(Request);
         if (!notFromSimResponse)
-            return StatusCode(401);
+            return Unauthorized();
 
-        var userID = GetUserID(username);
-        if (userID == -1)
+        var userId = await GetUserIdAsync(username);
+        if (!userId.HasValue)
         {
-            return NotFound();
+            return NotFound("User not found.");
         }
-        var sqlQuery = @"
-            SELECT message.*, user.*
-            FROM message
-            INNER JOIN user ON message.author_id = user.user_id
-            WHERE user.username = @Username AND message.flagged = 0
-            ORDER BY message.pub_date DESC
-            LIMIT @PerPage";
 
-        var dict = new Dictionary<string, object> { { "@Username", username }, { "@PerPage", no > 0 ? no : _perPage } };
-        var queryResult = await _databaseService.QueryDb<dynamic>(sqlQuery, dict);
+        int messagesToFetch = no > 0 ? no : int.Parse(_perPage);
 
-        var filteredMsgs = queryResult.Select(msg =>
-        {
-            var dictB = (IDictionary<string, object>)msg;
-            return new APIMessageModel
-            {
-                content = (string)dictB["text"],
-                pub_date = (long)dictB["pub_date"],
-                user = (string)dictB["username"]
-            };
-        }).ToList();
-        return Ok(filteredMsgs);
+        var messages = await messageRepository.GetApiMessagesByAuthorAsync(messagesToFetch, userId.Value);
+
+        return Ok(messages);
     }
 
 
@@ -255,33 +180,23 @@ public class APIController : ControllerBase
     {
         if (latest != null)
         {
-            updateLatest(latest);
+            UpdateLatest(latest);
         }
 
+        // Check if request is from simulator
         var notFromSimResponse = NotReqFromSimulator(Request);
         if (!notFromSimResponse)
-            return StatusCode(401);
+            return Unauthorized();
 
-        var userID = GetUserID(username);
-        if (userID == -1)
-            return NotFound();
-
-        var sqlQuery = @"
-            SELECT user.username
-            FROM user
-            INNER JOIN follower ON follower.whom_id = user.user_id
-            WHERE follower.who_id = @UserId
-            LIMIT @Limit";
-
-        var parameters = new Dictionary<string, object>
+        var userId = await GetUserIdAsync(username);
+        if (!userId.HasValue)
         {
-            { "@UserId", userID },
-            { "@Limit", no > 0 ? no : _perPage  }
-        };
+            return NotFound("User not found.");
+        }
 
-        var queryResult = await _databaseService.QueryDb<dynamic>(sqlQuery, parameters);
+        int messagesToFetch = no > 0 ? no : int.Parse(_perPage);
 
-        var followerNames = queryResult.Select(row => (string)row.username).ToList();
+        var followerNames = await followerRepository.GetFollowingNames(messagesToFetch, userId.Value);
 
         var followersResponse = new
         {
@@ -290,77 +205,56 @@ public class APIController : ControllerBase
 
         return Ok(followersResponse);
     }
-    public class FollowActionDto
-    {
-        public string? Follow { get; set; }
-        public string? Unfollow { get; set; }
-    }
 
     [HttpPost("fllws/{username}")]
     public async Task<IActionResult> FollowUser(string username, [FromBody] FollowActionDto followAction, int? latest)
     {
         if (latest != null)
         {
-            updateLatest(latest);
+            UpdateLatest(latest);
         }
 
         // Check if request is from simulator
         var notFromSimResponse = NotReqFromSimulator(Request);
         if (!notFromSimResponse)
-            return StatusCode(401);
+            return Unauthorized();
 
-        var userID = GetUserID(username);
-        if (userID == -1)
-            return NotFound();
+        var userId = await GetUserIdAsync(username);
+        if (!userId.HasValue)
+        {
+            return NotFound("User not found.");
+        }
 
-        // Extract the username to follow from the request body
+        // Follow
         if (!string.IsNullOrEmpty(followAction.Follow))
         {
-            // Access the 'follow' property from the model
-            var followsUsername = followAction.Follow;
+            var followsUserId = await GetUserIdAsync(followAction.Follow);
+            if (!followsUserId.HasValue)
+            {
+                return NotFound($"User '{followAction.Follow}' not found.");
+            }
 
-            var followsUserId = GetUserID(followsUsername);
-            if (followsUserId == -1)
-                return NotFound($"User '{followsUsername}' not found.");
-
-            //TODO: Implement the error handling for the case where the user is already being followed
-
-
-            // Insert the follow relationship into the database
-            var sqlQuery = "INSERT INTO follower (who_id, whom_id) VALUES (@WhoId, @WhomId)";
-            var parameters = new Dictionary<string, object>
-        {
-            { "@WhoId", userID },
-            { "@WhomId", followsUserId }
-        };
-
-            await _databaseService.QueryDb<int>(sqlQuery, parameters);
+            await followerRepository.Follow(userId.Value, followsUserId.Value);
 
             return Ok($"Successfully followed user '{followsUserId}'.");
         }
 
-        // TODO: Implement unfollowing
+        // Unfollow
         if (!string.IsNullOrEmpty(followAction.Unfollow))
         {
-            var unfollowsUsername = followAction.Unfollow;
+            var followsUserId = await GetUserIdAsync(followAction.Unfollow);
+            if (!followsUserId.HasValue)
+            {
+                return NotFound($"User '{followAction.Unfollow}' not found.");
+            }
 
-            var unfollowsUserId = GetUserID(unfollowsUsername);
-            if (unfollowsUserId == -1)
-                return NotFound($"User '{unfollowsUsername}' not found.");
+            var unfollowed = await followerRepository.Unfollow(userId.Value, followsUserId.Value);
 
-            var sqlQuery = "DELETE FROM follower WHERE who_id = @WhoId AND whom_id = @WhomId";
-            var parameters = new Dictionary<string, object>
-        {
-            { "@WhoId", userID },
-            { "@WhomId", unfollowsUserId }
-        };
-
-            await _databaseService.QueryDb<int>(sqlQuery, parameters);
-
-            return Ok($"Successfully unfollowed user '{unfollowsUserId}'.");
+            if (unfollowed)
+            {
+                return Ok($"Successfully unfollowed user '{followsUserId}'.");
+            }
         }
         return BadRequest("Invalid request.");
     }
 }
-
-
