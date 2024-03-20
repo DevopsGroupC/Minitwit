@@ -1,18 +1,17 @@
-version: "3.8"
+version: '3.3'
 
 networks:
   main:
 
 services:
+
   minitwitimage:
-    image: ${DOCKER_USERNAME}/csharptwitimage
-    container_name: csharp-minitwit
+    image: ${DOCKER_USERNAME}/csharptwit-preproduction
+    container_name: csharp-preproduction-minitwit
     networks:
       - main
     ports:
-      - "5000:8080"
-    volumes:
-      - /mnt/database:/app/Databases/volume
+        - '5000:8080'
 
   prometheus:
       image: prom/prometheus
