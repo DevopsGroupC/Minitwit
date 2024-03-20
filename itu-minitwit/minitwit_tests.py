@@ -23,6 +23,7 @@ class MiniTwitTestCase(unittest.TestCase):
         minitwit.init_db()
 
     # helper functions
+    # testing semantic release
 
     def register(self, username, password, password2=None, email=None):
         """Helper function to register a user"""
