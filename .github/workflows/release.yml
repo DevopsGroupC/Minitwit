@@ -7,8 +7,6 @@ on:
   push:
     branches:
       - main
-      - feature/68-automatic-release-workflow
-
 jobs:
   release:
     name: Release to NPM
