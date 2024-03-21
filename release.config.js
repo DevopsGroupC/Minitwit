@@ -3,7 +3,7 @@
  */
 
 const config = {
-  branches: ["feature/68-automatic-release-workflow"],
+  branches: ["main"],
   plugins: [
     "@semantic-release/commit-analyzer",
     "@semantic-release/release-notes-generator",
