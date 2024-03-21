@@ -3,12 +3,11 @@ name: Release
 
 on:
   ## Only manually release for now
- ## workflow_dispatch:
+  ## workflow_dispatch:
   push:
     branches:
       ##- main
       - feature/68-automatic-release-workflow
-
 
 jobs:
   release:
@@ -23,15 +22,14 @@ jobs:
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
+          persist-credentials: false
       - name: Setup Node.js 20.x
         uses: actions/setup-node@v3
         with:
-          node-version: '20.x'
-      - name: Setup .npmrc
-        run: echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN_PUB }}" > ~/.npmrc
+          node-version: "20.x"
       - name: Run npm install
         run: npm install
       - name: Semantic Release
         run: npx semantic-release
-        env: 
+        env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
