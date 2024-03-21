@@ -1,0 +1,7 @@
+{
+  "name": "git",
+  "devDependencies": {
+    "semantic-release-github-actions-tags": "^1.0.3",
+    "@semantic-release/git": "^8.0.0"
+  }
+}
