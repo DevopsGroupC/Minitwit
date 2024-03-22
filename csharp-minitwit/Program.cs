@@ -4,6 +4,7 @@ using csharp_minitwit.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using csharp_minitwit.Services.Repositories;
 using Prometheus;
+using csharp_minitwit.Middlewares;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -71,6 +72,7 @@ else
     app.UseSwaggerUI();
 }
 
+app.UseMiddleware<CatchAllMiddleware>();
 app.UseStaticFiles();
 app.UseRouting();
 app.UseSession();
