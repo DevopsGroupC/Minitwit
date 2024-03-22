@@ -4,6 +4,7 @@ on:
   push: 
     branches:
       - develop
+      - feature/110-switch-to-using-postgresql-database-hosted-by-digitalocean 
   workflow_dispatch:
 
 # The following secrets are required from the repository's settings:
