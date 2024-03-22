@@ -5,14 +5,14 @@ networks:
 
 services:
   minitwitimage:
-    image: ${DOCKER_USERNAME}/csharptwitimage
+    build:
+      context: .
+      dockerfile: Dockerfile
     container_name: csharp-minitwit
     networks:
       - main
     ports:
       - "5000:8080"
-    volumes:
-      - /mnt/database:/app/Databases/volume
 
   prometheus:
     image: prom/prometheus
