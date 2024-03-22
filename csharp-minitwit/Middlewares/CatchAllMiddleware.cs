@@ -30,8 +30,6 @@ namespace csharp_minitwit.Middlewares
                 .Observe(watch.Elapsed.TotalSeconds);
 
             ApplicationMetrics.HttpResponseStatusCodeTotal.WithLabels(context.Response.StatusCode.ToString()).Inc();
-
-            Console.WriteLine(context.Response.StatusCode);
         }
     }
 }
