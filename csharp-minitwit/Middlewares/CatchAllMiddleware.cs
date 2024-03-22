@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using Microsoft.AspNetCore.Http;
 using System.Threading.Tasks;
+using csharp_minitwit.Utils;
 // Assuming ApplicationMetrics is in the same namespace, or add the appropriate using statement
 
 namespace csharp_minitwit.Middlewares
@@ -16,22 +17,21 @@ namespace csharp_minitwit.Middlewares
 
         public async Task InvokeAsync(HttpContext context)
         {
-            var watch = Stopwatch.StartNew(); // Start the stopwatch at the beginning of the request handling.
+            var watch = Stopwatch.StartNew();
 
-            ApplicationMetrics.HttpRequestTotal.Inc();
-            // Before calling the next delegate in the pipeline, we don't do anything specific,
-            // because we want to measure the whole processing time of the request.
+            ApplicationMetrics.HttpRequestTotal.WithLabels(MetricsHelpers.SanitizePath(context.Request.Path)).Inc();
+
             await _next(context);
 
-            // Stop the stopwatch after the request has been fully processed.
             watch.Stop();
 
-            // Record the elapsed time for the request in the histogram.
-            ApplicationMetrics.HttpRequestDuration.Observe(watch.Elapsed.TotalSeconds);
+            ApplicationMetrics.HttpRequestDuration
+                .WithLabels(MetricsHelpers.SanitizePath(context.Request.Path))
+                .Observe(watch.Elapsed.TotalSeconds);
 
-            // If you want to log the request URL, it's recommended to do it before processing the request,
-            // as logging at the end might not capture all details if an exception occurs.
-            Console.WriteLine($"Request URL: {context.Request.Path}");
+            ApplicationMetrics.HttpResponseStatusCodeTotal.WithLabels(context.Response.StatusCode.ToString()).Inc();
+
+            Console.WriteLine(context.Response.StatusCode);
         }
     }
 }
