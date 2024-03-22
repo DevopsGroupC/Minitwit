@@ -63,7 +63,7 @@ jobs:
         # Updating all files on remote server from the remote_files_preproduction
         run: >
           scp -i ~/.ssh/preproduction -o StrictHostKeyChecking=no
-          /csharp-minitwit/remote_files_preproduction/* $SSH_USER@$SSH_HOST /csharp-minitwit
+          /csharp-minitwit/remote_files_preproduction/* $SSH_USER@$SSH_HOST:/csharp-minitwit
         env:
           SSH_USER: ${{ secrets.SSH_USER }}
           SSH_HOST: ${{ secrets.SSH_HOST_PRE }}
