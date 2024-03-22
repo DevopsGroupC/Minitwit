@@ -48,7 +48,7 @@ builder.Services.AddSession(options =>
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 
 builder.Services.AddDbContext<MinitwitContext>(options =>
-options.UseSqlite(connectionString));
+options.UseNpgsql(connectionString));
 
 builder.Services.AddScoped<IMessageRepository, MessageRepository>();
 builder.Services.AddScoped<IFollowerRepository, FollowerRepository>();
