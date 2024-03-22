@@ -35,7 +35,7 @@ jobs:
         uses: docker/build-push-action@v2
         with:
           context: ./csharp-minitwit
-          file: ./csharp-minitwit/Dockerfile-pre
+          file: ./csharp-minitwit/Dockerfile-staging
           push: true
           tags: ${{ secrets.DOCKER_USERNAME }}/csharptwit-preproduction:latest
           cache-from: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/csharptwit-preproduction:webbuildcache
@@ -58,6 +58,15 @@ jobs:
           chmod 600 ~/.ssh/preproduction
         env:
           SSH_KEY: ${{ secrets.SSH_KEY_PRE }}
+      
+      - name: Copy files to server
+        # Updating all files on remote server from the remote_files_preproduction
+        run: >
+          scp -i ~/.ssh/preproduction -o StrictHostKeyChecking=no
+          ./csharp-minitwit/remote_files_preproduction/* $SSH_USER@$SSH_HOST:/csharp-minitwit
+        env:
+          SSH_USER: ${{ secrets.SSH_USER }}
+          SSH_HOST: ${{ secrets.SSH_HOST_PRE }}
 
       - name: Deploy to server
         # Calls deploy.sh to pull csharp-minitwit image from Docker Hub and spin container up.
