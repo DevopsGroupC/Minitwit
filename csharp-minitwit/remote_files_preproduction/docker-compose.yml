@@ -34,4 +34,3 @@ services:
     networks:
       - main
   
-  # TESTING; TESTING; TESTING 123
