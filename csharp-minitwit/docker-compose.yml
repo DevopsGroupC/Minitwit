@@ -15,6 +15,7 @@ services:
       - "5000:8080"
 
   prometheus:
+    depends_on: [minitwitimage]
     image: prom/prometheus
     container_name: prometheus
     volumes:
@@ -29,6 +30,7 @@ services:
       - "csharp-minitwit:host-gateway"
 
   grafana:
+    depends_on: [prometheus]
     image: grafana/grafana:10.2.4
     ports:
       - "3000:3000"
