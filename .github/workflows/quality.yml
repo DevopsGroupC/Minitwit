@@ -20,7 +20,7 @@ jobs:
         run: cd ./csharp-minitwit/
 
       - name: Restore dependencies
-        run: dotnet restore
+        run: dotnet restore csharp-minitwit.sln
 
       - name: Format
         run: dotnet format csharp-minitwit.sln --verify-no-changes --verbosity diagnostic
