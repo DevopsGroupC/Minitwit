@@ -7,10 +7,8 @@ using Microsoft.EntityFrameworkCore;
 
 namespace csharp_minitwit.Services.Repositories
 {
-    public class FollowerRepository(MinitwitContext dbContext) : IFollowerRepository
-    {
-        public async Task<bool> Follow(int whoId, int whomId)
-        {
+    public class FollowerRepository(MinitwitContext dbContext) : IFollowerRepository{
+        public async Task<bool> Follow(int whoId, int whomId){
             var watch = Stopwatch.StartNew();
 
             await dbContext.Followers.AddAsync(new Follower
