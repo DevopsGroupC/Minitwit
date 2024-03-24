@@ -192,9 +192,9 @@ public class HomeController(
     [HttpGet("/{username}")]
     public async Task<IActionResult> UserTimeline(string username)
     {
-        if (TempData[nameof(Message)] is true)
+        if (TempData[nameof(Message)] is not null)
         {
-            ViewBag.message = true;
+            ViewBag.message = $"You are no longer following \"{username}\"";
         }
 
         var profileUser = await userRepository.GetByUsername(username);
