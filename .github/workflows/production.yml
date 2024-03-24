@@ -72,7 +72,7 @@ jobs:
       - name: Deploy to server
         # Calls deploy.sh to pull csharp-minitwit image from Docker Hub and spin container up.
         run: |
-            ssh -i ~/.ssh/staging_key -o StrictHostKeyChecking=no $SSH_USER@$SSH_HOST << 'EOF'
+            ssh -i ~/.ssh/production_key -o StrictHostKeyChecking=no $SSH_USER@$SSH_HOST << 'EOF'
               export ConnectionStrings__DefaultConnection=${{ secrets.DB_CONNECTIONSTRING_PRODUCTION }}
               cd /csharp-minitwit
               printenv
