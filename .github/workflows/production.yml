@@ -1,9 +1,7 @@
 name: Production Deployment #shoutout to the exercises session
 
 on:
-  pull_request:
-    types:
-      - auto_merge_enabled
+  push:
     # Run workflow every time something is pushed to the main branch
     branches:
       - main
@@ -43,6 +41,7 @@ jobs:
           tags: ${{ secrets.DOCKER_USERNAME }}/csharptwitimage:latest
           cache-from: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/csharptwitimage:webbuildcache
           cache-to: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/csharptwitimage:webbuildcache,mode=max
+          build-args: ENVIRONMENT=Production
 
       #TODO: Add / adjust tests from py api maybe?
 
@@ -57,15 +56,15 @@ jobs:
       - name: Configure SSH
         run: |
           mkdir -p ~/.ssh/
-          echo "$SSH_KEY" > ~/.ssh/do_ssh_key
-          chmod 600 ~/.ssh/do_ssh_key
+          echo "$SSH_KEY" > ~/.ssh/production_key
+          chmod 600 ~/.ssh/production_key
         env:
           SSH_KEY: ${{ secrets.SSH_KEY }}
-      
+
       - name: Copy files to server
         # Updating all files on remote server from the remote_files
         run: >
-          scp -i ~/.ssh/do_ssh_key -o StrictHostKeyChecking=no
+          scp -i ~/.ssh/production_key -o StrictHostKeyChecking=no
           ./csharp-minitwit/remote_files/* $SSH_USER@$SSH_HOST:/csharp-minitwit
         env:
           SSH_USER: ${{ secrets.SSH_USER }}
@@ -73,10 +72,14 @@ jobs:
 
       - name: Deploy to server
         # Calls deploy.sh to pull csharp-minitwit image from Docker Hub and spin container up.
-        run: >
-          ssh $SSH_USER@$SSH_HOST
-          -i ~/.ssh/do_ssh_key -o StrictHostKeyChecking=no
-          '/csharp-minitwit/deploy.sh'
+        run: |
+          ssh -i ~/.ssh/production_key -o StrictHostKeyChecking=no $SSH_USER@$SSH_HOST << 'EOF'
+            export ConnectionStrings__DefaultConnection=${{ secrets.DB_CONNECTIONSTRING_PRODUCTION }}
+            cd /csharp-minitwit
+            printenv
+            docker compose -f docker-compose.yml pull
+            docker compose -f docker-compose.yml up -d
+          EOF
         env:
           SSH_USER: ${{ secrets.SSH_USER }}
           SSH_HOST: ${{ secrets.SSH_HOST }}

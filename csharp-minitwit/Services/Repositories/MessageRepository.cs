@@ -1,6 +1,9 @@
-﻿using csharp_minitwit.Models;
+using System.Diagnostics;
+
+using csharp_minitwit.Models;
 using csharp_minitwit.Models.ViewModels;
 using csharp_minitwit.Services.Interfaces;
+using csharp_minitwit.Utils;
 
 using Microsoft.EntityFrameworkCore;
 
@@ -10,6 +13,7 @@ namespace csharp_minitwit.Services.Repositories
     {
         public Task AddMessageAsync(string text, int authorId)
         {
+            var watch = Stopwatch.StartNew();
             var message = new Message
             {
                 Text = text,
@@ -18,6 +22,12 @@ namespace csharp_minitwit.Services.Repositories
             };
 
             dbContext.Messages.Add(message);
+
+            watch.Stop();
+            ApplicationMetrics.HttpRequestDuration
+                    .WithLabels(MetricsHelpers.SanitizePath("add_message"))
+                    .Observe(watch.Elapsed.TotalSeconds);
+
             return dbContext.SaveChangesAsync();
         }
 

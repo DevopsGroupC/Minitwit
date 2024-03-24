@@ -1,18 +1,11 @@
 using System.Reflection;
-
 using csharp_minitwit;
-using csharp_minitwit.ActionFilters;
-using csharp_minitwit.Services;
 using csharp_minitwit.Services.Interfaces;
-using csharp_minitwit.Services.Repositories;
-using csharp_minitwit.Utils;
-
-using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.OpenApi.Models;
-using Microsoft.OpenApi.Models;
+using csharp_minitwit.Services.Repositories;
+using Prometheus;
+using csharp_minitwit.Middlewares;
 
-using OpenTelemetry.Metrics;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -25,21 +18,8 @@ builder.Services.Configure<CookiePolicyOptions>(options =>
     options.MinimumSameSitePolicy = SameSiteMode.None;
 });
 
-// Setup telemetry and monitoring 
-builder.Services.AddOpenTelemetry()
-    .WithMetrics(builder =>
-    {
-        builder.AddPrometheusExporter();
-
-        builder.AddMeter("Microsoft.AspNetCore.Hosting",
-                         "Microsoft.AspNetCore.Server.Kestrel");
-        builder.AddView("http.server.request.duration",
-            new ExplicitBucketHistogramConfiguration
-            {
-                Boundaries = new double[] { 0, 0.005, 0.01, 0.025, 0.05,
-                       0.075, 0.1, 0.25, 0.5, 0.75, 1, 2.5, 5, 7.5, 10 }
-            });
-    });
+// Export metrics from all HTTP clients registered in services
+builder.Services.UseHttpClientMetrics();
 
 builder.Services.AddSession(options =>
 {
@@ -50,8 +30,17 @@ builder.Services.AddSession(options =>
 });
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 
-builder.Services.AddDbContext<MinitwitContext>(options =>
-options.UseSqlite(connectionString));
+if (builder.Environment.IsDevelopment())
+{
+    builder.Services.AddDbContext<MinitwitContext>(options =>
+        options.UseSqlite(connectionString));
+}
+else
+{
+    builder.Services.AddDbContext<MinitwitContext>(options =>
+        options.UseNpgsql(connectionString));
+}
+
 
 builder.Services.AddScoped<IMessageRepository, MessageRepository>();
 builder.Services.AddScoped<IFollowerRepository, FollowerRepository>();
@@ -92,15 +81,15 @@ else
     app.UseSwaggerUI();
 }
 
-app.MapPrometheusScrapingEndpoint();
-
-// app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRouting();
 app.UseSession();
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseCookiePolicy();
+app.MapMetrics(); // "/metrics"
+app.UseHttpMetrics();
+app.UseMiddleware<CatchAllMiddleware>();
 
 app.MapControllerRoute(
     name: "default",

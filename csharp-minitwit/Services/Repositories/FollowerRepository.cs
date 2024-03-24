@@ -1,4 +1,7 @@
-﻿using csharp_minitwit.Services.Interfaces;
+using System.Diagnostics;
+
+using csharp_minitwit.Services.Interfaces;
+using csharp_minitwit.Utils;
 
 using Microsoft.EntityFrameworkCore;
 
@@ -8,17 +11,25 @@ namespace csharp_minitwit.Services.Repositories
     {
         public async Task<bool> Follow(int whoId, int whomId)
         {
+            var watch = Stopwatch.StartNew();
+
             await dbContext.Followers.AddAsync(new Follower
             {
                 WhoId = whoId,
                 WhomId = whomId
             });
 
+            watch.Stop();
+            ApplicationMetrics.HttpRequestDuration
+                    .WithLabels(MetricsHelpers.SanitizePath("/follow"))
+                    .Observe(watch.Elapsed.TotalSeconds);
+
             return await dbContext.SaveChangesAsync() > 0;
         }
 
         public async Task<bool> Unfollow(int whoId, int whomId)
         {
+            var watch = Stopwatch.StartNew();
             var follower = await dbContext.Followers
                 .FirstOrDefaultAsync(f => f.WhoId == whoId && f.WhomId == whomId);
 
@@ -26,6 +37,12 @@ namespace csharp_minitwit.Services.Repositories
             {
                 dbContext.Followers.Remove(follower);
                 await dbContext.SaveChangesAsync();
+
+                watch.Stop();
+                ApplicationMetrics.HttpRequestDuration
+                        .WithLabels(MetricsHelpers.SanitizePath("unfollow"))
+                        .Observe(watch.Elapsed.TotalSeconds);
+
                 return true;
             }
             else

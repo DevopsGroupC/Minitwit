@@ -6,11 +6,11 @@ using csharp_minitwit.Models.DTOs;
 using csharp_minitwit.Models.ViewModels;
 using csharp_minitwit.Services.Interfaces;
 using csharp_minitwit.Services.Repositories;
-using csharp_minitwit.Utils;
 
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Mvc.Filters;
+using Microsoft.EntityFrameworkCore.Query;
 
 namespace csharp_minitwit.Controllers;
 
@@ -192,9 +192,9 @@ public class HomeController(
     [HttpGet("/{username}")]
     public async Task<IActionResult> UserTimeline(string username)
     {
-        if (TempData[nameof(Message)] is true)
+        if (TempData[nameof(Message)] is not null)
         {
-            ViewBag.message = true;
+            ViewBag.message = $"You are no longer following \"{username}\"";
         }
 
         var profileUser = await userRepository.GetByUsername(username);
@@ -230,7 +230,6 @@ public class HomeController(
     public async Task<IActionResult> FollowUser(string username)
     {
         var currentUserId = HttpContext.Session.GetInt32("user_id")!.Value;
-
         var profileUser = await userRepository.GetByUsername(username);
 
         if (profileUser == null)
@@ -241,6 +240,7 @@ public class HomeController(
         await followerRepository.Follow(currentUserId, profileUser.UserId);
 
         TempData[nameof(Message)] = $"You are now following {username}";
+
         return RedirectToAction(nameof(UserTimeline), new { username });
     }
 

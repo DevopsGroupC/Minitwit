@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 
 using Microsoft.EntityFrameworkCore;
@@ -34,8 +34,9 @@ public partial class MinitwitContext : DbContext
     {
         modelBuilder.Entity<Follower>(entity =>
         {
-            entity.HasKey(e => e.FollowerId).HasName("PK_Follower");
             entity.ToTable("follower");
+
+            entity.HasKey(e => e.FollowerId);
 
             entity.HasOne(e => e.Who)
                   .WithMany(u => u.Following)
@@ -49,7 +50,6 @@ public partial class MinitwitContext : DbContext
                   .OnDelete(DeleteBehavior.Restrict) // Prevent cascading delete
                   .HasConstraintName("FK_Follower_Whom");
 
-            entity.Property(e => e.FollowerId).HasColumnName("follower_id");
             entity.Property(e => e.WhoId).HasColumnName("who_id");
             entity.Property(e => e.WhomId).HasColumnName("whom_id");
         });
@@ -58,13 +58,14 @@ public partial class MinitwitContext : DbContext
         {
             entity.ToTable("message");
 
+            entity.HasKey(e => e.MessageId);
+
             entity.HasOne(m => m.Author)
                   .WithMany(u => u.Messages)
                   .HasForeignKey(m => m.AuthorId)
                   .OnDelete(DeleteBehavior.Cascade) // Prevent cascading delete
                   .HasConstraintName("FK_Message_User");
 
-            entity.Property(e => e.MessageId).HasColumnName("message_id");
             entity.Property(e => e.AuthorId).HasColumnName("author_id");
             entity.Property(e => e.Flagged).HasColumnName("flagged");
             entity.Property(e => e.PubDate).HasColumnName("pub_date");
@@ -77,7 +78,7 @@ public partial class MinitwitContext : DbContext
         {
             entity.ToTable("user");
 
-            entity.Property(e => e.UserId).HasColumnName("user_id");
+            entity.Property(e => e.UserId).HasColumnName("user_id").ValueGeneratedOnAdd();
             entity.Property(e => e.Email)
                 .HasColumnType("text")
                 .HasColumnName("email");
@@ -87,6 +88,7 @@ public partial class MinitwitContext : DbContext
             entity.Property(e => e.Username)
                 .HasColumnType("text")
                 .HasColumnName("username");
+            entity.HasIndex(e => e.Username);
         });
 
         OnModelCreatingPartial(modelBuilder);

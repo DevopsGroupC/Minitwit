@@ -47,12 +47,7 @@
         You were logged out
     </div>
 }
-@if (ViewBag.message != null) 
-{
-    <div class="alert alert-success" role="alert">
-        @ViewBag.message
-    </div>
-}
+
 
 
 @if (Model.CurrentUserId.HasValue)
@@ -77,11 +72,22 @@
                     </form>
                 </text>
             }
-            else
+            else if (ViewBag.message != null)
             {
                 var lookingAtUser = ViewContext.RouteData.Values["username"].ToString();
 
                 <text>You are no longer following &#34;@lookingAtUser&#34;
+                    <form action="/@Model.ProfileUser.Username/follow" method="get" class="inline-form">
+                        <input type="hidden" name="username" value="@Model.ProfileUser.Username" />
+                        <button type="submit" class="unfollow-link">Follow user</button>
+                    </form>
+                </text>
+            }
+            else
+            {
+                var lookingAtUser = ViewContext.RouteData.Values["username"].ToString();
+
+                <text>You are not yet following this user.
                     <form action="/@Model.ProfileUser.Username/follow" method="get" class="inline-form">
                         <input type="hidden" name="username" value="@Model.ProfileUser.Username" />
                      <button type="submit" class="unfollow-link">Follow user</button>
