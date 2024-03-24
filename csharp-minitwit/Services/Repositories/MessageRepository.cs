@@ -13,7 +13,6 @@ namespace csharp_minitwit.Services.Repositories
     {
         public Task AddMessageAsync(string text, int authorId)
         {
-            var watch = Stopwatch.StartNew();
             var message = new Message
             {
                 Text = text,
@@ -22,11 +21,6 @@ namespace csharp_minitwit.Services.Repositories
             };
 
             dbContext.Messages.Add(message);
-
-            watch.Stop();
-            ApplicationMetrics.HttpRequestDuration
-                    .WithLabels(MetricsHelpers.SanitizePath("add_message"))
-                    .Observe(watch.Elapsed.TotalSeconds);
 
             return dbContext.SaveChangesAsync();
         }

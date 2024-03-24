@@ -20,6 +20,7 @@ namespace csharp_minitwit.Services.Repositories
             });
 
             watch.Stop();
+            Console.WriteLine("/follow");
             ApplicationMetrics.HttpRequestDuration
                     .WithLabels(MetricsHelpers.SanitizePath("/follow"))
                     .Observe(watch.Elapsed.TotalSeconds);
@@ -39,6 +40,7 @@ namespace csharp_minitwit.Services.Repositories
                 await dbContext.SaveChangesAsync();
 
                 watch.Stop();
+                Console.WriteLine("/unfollow");
                 ApplicationMetrics.HttpRequestDuration
                         .WithLabels(MetricsHelpers.SanitizePath("unfollow"))
                         .Observe(watch.Elapsed.TotalSeconds);
