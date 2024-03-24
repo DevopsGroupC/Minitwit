@@ -15,12 +15,8 @@ jobs:
         with:
           dotnet-version: 8.0.x
 
-      # Change to the directory where your solution is located
-      - name: Change to project directory
-        run: cd ./csharp-minitwit/
-
       - name: Restore dependencies
-        run: dotnet restore csharp-minitwit.sln
+        run: dotnet restore ./csharp-minitwit/csharp-minitwit.sln
 
       - name: Format
-        run: dotnet format csharp-minitwit.sln --verify-no-changes --verbosity diagnostic
+        run: dotnet format ./csharp-minitwit/csharp-minitwit.sln --verify-no-changes --verbosity diagnostic
