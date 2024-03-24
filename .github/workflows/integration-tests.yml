@@ -39,7 +39,13 @@ jobs:
           tags: ${{ secrets.DOCKER_USERNAME }}/csharptwitimage:latest
 
       - name: Run container
-        run: docker run -d -p 5000:5000 -e ASPNETCORE_ENVIRONMENT=Development ${{ secrets.DOCKER_USERNAME }}/csharptwitimage:latest
+        run: docker run -d -p 5000:5000 -e ASPNETCORE_ENVIRONMENT=Development --name minitwittest ${{ secrets.DOCKER_USERNAME }}/csharptwitimage:latest
+      
+      - name: Wait for application to start
+        run: sleep 10
+      
+      - name: Check container logs
+        run: docker logs minitwittest
 
       - name: Set up Python
         uses: actions/setup-python@v2
