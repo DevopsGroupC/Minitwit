@@ -30,6 +30,7 @@ jobs:
           git config user.name 'github-actions[bot]'
           git config user.email 'github-actions[bot]@users.noreply.github.com'
           git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/DevopsGroupC/Minitwit
+          git fetch --all
           git checkout ${{ github.head_ref }}
           git add .
           git commit -am "Automated formatting"
