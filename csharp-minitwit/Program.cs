@@ -1,5 +1,7 @@
 using System.Reflection;
+using Microsoft.OpenApi.Models;
 using csharp_minitwit;
+using csharp_minitwit.Middlewares;
 using csharp_minitwit.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using csharp_minitwit.Services.Repositories;

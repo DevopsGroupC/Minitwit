@@ -1,8 +1,10 @@
-﻿using System.Diagnostics;
+using System.Diagnostics;
+
 using csharp_minitwit.Models;
 using csharp_minitwit.Models.ViewModels;
 using csharp_minitwit.Services.Interfaces;
 using csharp_minitwit.Utils;
+
 using Microsoft.EntityFrameworkCore;
 
 namespace csharp_minitwit.Services.Repositories

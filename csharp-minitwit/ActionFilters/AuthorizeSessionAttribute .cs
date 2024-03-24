@@ -1,6 +1,7 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using System.Threading.Tasks;
+
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
-using System.Threading.Tasks;
 
 namespace csharp_minitwit.ActionFilters;
 
@@ -8,7 +9,8 @@ public class AsyncSessionAuthorizeAttribute : Attribute, IAsyncAuthorizationFilt
 {
     public async Task OnAuthorizationAsync(AuthorizationFilterContext context)
     {
-        await Task.Run(() => {
+        await Task.Run(() =>
+        {
             var userId = context.HttpContext.Session.GetInt32("user_id");
 
             // If no user ID is found in the session, set the result to unauthorized
@@ -19,4 +21,3 @@ public class AsyncSessionAuthorizeAttribute : Attribute, IAsyncAuthorizationFilt
         });
     }
 }
-
