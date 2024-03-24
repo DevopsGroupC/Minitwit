@@ -1,18 +1,26 @@
-    FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
-    WORKDIR /app
+# Define a build-time argument for the environment
+ARG ENVIRONMENT=Development
 
-    COPY . .
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+WORKDIR /app
 
-    RUN dotnet restore
+COPY . .
 
-    RUN dotnet publish -c Release -o out
+RUN dotnet restore
 
-    FROM mcr.microsoft.com/dotnet/aspnet:8.0
-    WORKDIR /app
+RUN dotnet publish -c Release -o out
 
-    COPY --from=build /app/out .
-    COPY ./Databases/schema.sql /app/Databases/schema.sql
-    COPY ./Services/latest_processed_sim_action_id.txt /app/Services/latest_processed_sim_action_id.txt
-    EXPOSE 5000
+FROM mcr.microsoft.com/dotnet/aspnet:8.0
+WORKDIR /app
 
-    ENTRYPOINT ["dotnet", "csharp-minitwit.dll"]
+# Use the build-time argument to set the ASPNETCORE_ENVIRONMENT variable
+ARG ENVIRONMENT
+ENV ASPNETCORE_ENVIRONMENT=${ENVIRONMENT}
+
+COPY --from=build /app/out .
+COPY ./Databases/schema.sql ./schema.sql
+COPY ./Databases/volume/minitwit.db ./Databases/volume/minitwit.db
+COPY ./Services/latest_processed_sim_action_id.txt ./Services/latest_processed_sim_action_id.txt
+EXPOSE 5000
+
+ENTRYPOINT ["dotnet", "csharp-minitwit.dll"]

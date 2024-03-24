@@ -1,5 +1,6 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
+
 using Microsoft.EntityFrameworkCore;
 
 namespace csharp_minitwit;
@@ -8,7 +9,7 @@ public partial class MinitwitContext : DbContext
 {
     private readonly string _connectionString;
 
-    public MinitwitContext(){}
+    public MinitwitContext() { }
 
     public MinitwitContext(DbContextOptions<MinitwitContext> options)
         : base(options)

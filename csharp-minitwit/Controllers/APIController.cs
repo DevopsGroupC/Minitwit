@@ -1,10 +1,11 @@
-using Microsoft.AspNetCore.Mvc;
 using csharp_minitwit.Models;
 using csharp_minitwit.Models.DTOs;
-using csharp_minitwit.Utils;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
 using csharp_minitwit.Services.Interfaces;
+using csharp_minitwit.Utils;
+
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Query;
 
 namespace csharp_minitwit.Controllers;
