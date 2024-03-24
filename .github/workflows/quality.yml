@@ -15,6 +15,10 @@ jobs:
         with:
           dotnet-version: 8.0.x
 
+      # Change to the directory where your solution is located
+      - name: Change to project directory
+        run: cd ./csharp-minitwit/
+
       - name: Restore dependencies
         run: dotnet restore
 
