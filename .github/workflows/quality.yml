@@ -1,8 +1,10 @@
 name: Format check on push
-on: push
-  branches: feature/software-quality-tools
+on:
+  push:
+    branches:
+      - feature/software-quality-tools
 jobs:
-  dotnet-format: 
+  dotnet-format:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
