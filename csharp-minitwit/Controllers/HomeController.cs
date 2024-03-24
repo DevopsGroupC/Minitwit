@@ -6,12 +6,12 @@ using csharp_minitwit.Models.DTOs;
 using csharp_minitwit.Models.ViewModels;
 using csharp_minitwit.Services.Interfaces;
 using csharp_minitwit.Services.Repositories;
-using Microsoft.AspNetCore.Mvc.Filters;
-using Microsoft.EntityFrameworkCore.Query;
 
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
+using Microsoft.AspNetCore.Mvc.Filters;
+using Microsoft.EntityFrameworkCore.Query;
 using Microsoft.EntityFrameworkCore.Query;
 
 namespace csharp_minitwit.Controllers;

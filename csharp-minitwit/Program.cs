@@ -1,12 +1,15 @@
 using System.Reflection;
-using Microsoft.OpenApi.Models;
+
 using csharp_minitwit;
 using csharp_minitwit.Middlewares;
-using csharp_minitwit.Services.Interfaces;
-using Microsoft.EntityFrameworkCore;
-using csharp_minitwit.Services.Repositories;
-using Prometheus;
 using csharp_minitwit.Middlewares;
+using csharp_minitwit.Services.Interfaces;
+using csharp_minitwit.Services.Repositories;
+
+using Microsoft.EntityFrameworkCore;
+using Microsoft.OpenApi.Models;
+
+using Prometheus;
 
 
 var builder = WebApplication.CreateBuilder(args);
