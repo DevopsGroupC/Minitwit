@@ -1,17 +1,20 @@
 name: Format check on push
 on: push
+  branches: feature/software-quality-tools
 jobs:
-  dotnet-format:
+  dotnet-format: 
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
-      - name: Add dotnet-format problem matcher
-        uses: xt0rted/dotnet-format-problem-matcher@v1
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: 8.0.x
 
-      - name: Restore dotnet tools
-        uses: xt0rted/dotnet-tool-restore@v1
+      - name: Restore dependencies
+        run: dotnet restore
 
-      - name: Run dotnet format
-        uses: xt0rted/dotnet-format@v1
+      - name: Format
+        run: dotnet format csharp-minitwit.sln --verify-no-changes --verbosity diagnostic
