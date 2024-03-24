@@ -1,4 +1,5 @@
-@model csharp_minitwit.Models.RegisterModel
+@model RegisterDTO
+@using csharp_minitwit.Models.DTOs;
 
 @{
     Layout = "~/Views/Home/Layout.cshtml";
@@ -17,13 +18,25 @@
 <form asp-action="Register" method="post">
     <dl>
         <dt>Username:</dt>
-        <dd><input asp-for="Username" class="form-control"></dd>
+        <dd>
+            <input asp-for="Username" class="form-control">
+            <span asp-validation-for="Username" class="text-danger"></span>
+        </dd>
         <dt>E-Mail:</dt>
-        <dd><input asp-for="Email" class="form-control"></dd>
+        <dd>
+            <input asp-for="Email" class="form-control">
+            <span asp-validation-for="Email" class="text-danger"></span>
+        </dd>
         <dt>Password:</dt>
-        <dd><input asp-for="Password" class="form-control" type="password"></dd>
+        <dd>
+            <input asp-for="Password" class="form-control" type="password">
+            <span asp-validation-for="Password" class="text-danger"></span>
+        </dd>
         <dt>Password <small>(repeat)</small>:</dt>
-        <dd><input asp-for="Password2" class="form-control" type="password"></dd>
+        <dd>
+            <input asp-for="Password2" class="form-control" type="password">
+            <span asp-validation-for="Password2" class="text-danger"></span>
+        </dd>
     </dl>
     <div class="actions"><button type="submit" class="btn btn-primary">Sign Up</button></div>
 </form>

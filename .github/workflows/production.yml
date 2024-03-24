@@ -57,16 +57,25 @@ jobs:
       - name: Configure SSH
         run: |
           mkdir -p ~/.ssh/
-          echo "$SSH_KEY" > ~/.ssh/do_ssh_key
-          chmod 600 ~/.ssh/do_ssh_key
+          echo "$SSH_KEY" > ~/.ssh/production_key
+          chmod 600 ~/.ssh/production_key
         env:
           SSH_KEY: ${{ secrets.SSH_KEY }}
+      
+      - name: Copy files to server
+        # Updating all files on remote server from the remote_files
+        run: >
+          scp -i ~/.ssh/production_key -o StrictHostKeyChecking=no
+          ./csharp-minitwit/remote_files/* $SSH_USER@$SSH_HOST:/csharp-minitwit
+        env:
+          SSH_USER: ${{ secrets.SSH_USER }}
+          SSH_HOST: ${{ secrets.SSH_HOST }}
 
       - name: Deploy to server
         # Calls deploy.sh to pull csharp-minitwit image from Docker Hub and spin container up.
         run: >
           ssh $SSH_USER@$SSH_HOST
-          -i ~/.ssh/do_ssh_key -o StrictHostKeyChecking=no
+          -i ~/.ssh/production_key -o StrictHostKeyChecking=no
           '/csharp-minitwit/deploy.sh'
         env:
           SSH_USER: ${{ secrets.SSH_USER }}

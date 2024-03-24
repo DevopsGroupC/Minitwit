@@ -35,6 +35,7 @@ app = Flask(__name__)
 
 def connect_db():
     """Returns a new connection to the database."""
+    "TESTING"
     return sqlite3.connect(DATABASE)
 
 

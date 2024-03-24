@@ -12,6 +12,8 @@ services:
       - main
     ports:
         - '5000:8080'
+    environment:
+      - ConnectionStrings__DefaultConnection=${ConnectionStrings__DefaultConnection}
 
   prometheus:
       image: prom/prometheus
@@ -33,3 +35,4 @@ services:
       - "3000:3000"
     networks:
       - main
+  
