@@ -2,8 +2,11 @@ name: Format check on push
 on:
   pull_request:
     types: [opened, reopened, edited, synchronize, ready_for_review]
-    # branches:
-    #   - feature/software-quality-tools
+  
+  push:
+    branches:
+      - feature/software-quality-tools
+
 jobs:
   dotnet-format:
     runs-on: ubuntu-latest
@@ -13,8 +16,6 @@ jobs:
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0 # Fetches all history for all branches and tags
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
@@ -27,17 +28,18 @@ jobs:
       - name: Format
         run: dotnet format ./csharp-minitwit/csharp-minitwit.sln --verbosity diagnostic
 
+      - name: Lint Dockerfile
+        uses: hadolint/hadolint-action@master
+        with:
+          dockerfile: ./csharp-minitwit/Dockerfile
+
+    #  - name: Lint C# code
+      #  run: dotnet build
+
       - name: Push changes
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email 'github-actions[bot]@users.noreply.github.com'
-          git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/DevopsGroupC/Minitwit
-          git checkout 'origin/${{ github.head_ref }}'
-          git add .
-          # Check if there are any changes to commit
-          if git diff --staged --quiet; then
-            echo "No changes to commit."
-          else
-            git commit -am "Automated formatting"
-            git push
-          fi
+          git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/$GITHUB_REPOSITORY
+          git commit -am "Automated formatting"
+          git push
