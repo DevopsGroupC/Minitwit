@@ -1,6 +1,7 @@
 ﻿using csharp_minitwit.Models;
 using csharp_minitwit.Models.ViewModels;
 using csharp_minitwit.Services.Interfaces;
+
 using Microsoft.EntityFrameworkCore;
 
 namespace csharp_minitwit.Services.Repositories
@@ -13,7 +14,7 @@ namespace csharp_minitwit.Services.Repositories
             {
                 Text = text,
                 AuthorId = authorId,
-                PubDate = (int) DateTimeOffset.Now.ToUnixTimeSeconds(),
+                PubDate = (int)DateTimeOffset.Now.ToUnixTimeSeconds(),
             };
 
             dbContext.Messages.Add(message);
@@ -24,9 +25,9 @@ namespace csharp_minitwit.Services.Repositories
         {
             return await dbContext.Messages
                 .Where(m => m.Flagged == 0)
-                .Join(dbContext.Users, 
-                    message => message.AuthorId, 
-                    user => user.UserId, 
+                .Join(dbContext.Users,
+                    message => message.AuthorId,
+                    user => user.UserId,
                     (message, user) => new MessageWithAuthorModel
                     {
                         Message = message,
@@ -41,10 +42,10 @@ namespace csharp_minitwit.Services.Repositories
         {
             return await dbContext.Messages
                 .Where(m => m.Flagged == 0 && m.AuthorId == authorId)
-                .Join(dbContext.Users, 
-                    message => message.AuthorId, 
-                    user => user.UserId, 
-                    (message, user) => new MessageWithAuthorModel 
+                .Join(dbContext.Users,
+                    message => message.AuthorId,
+                    user => user.UserId,
+                    (message, user) => new MessageWithAuthorModel
                     {
                         Message = message,
                         Author = user,
@@ -58,16 +59,16 @@ namespace csharp_minitwit.Services.Repositories
         {
             return await dbContext.Messages
                 .Where(m => m.Flagged == 0)
-                .Join(dbContext.Users, 
-                    message => message.AuthorId, 
-                    user => user.UserId, 
+                .Join(dbContext.Users,
+                    message => message.AuthorId,
+                    user => user.UserId,
                     (message, user) => new MessageWithAuthorModel
                     {
                         Message = message,
                         Author = user,
                     })
                 .Where(ma =>
-                    ma.Author.UserId == userId 
+                    ma.Author.UserId == userId
                     || dbContext.Followers.Any(f => f.WhoId == userId && f.WhomId == ma.Author.UserId))
                 .OrderByDescending(ma => ma.Message.PubDate)
                 .Take(n)

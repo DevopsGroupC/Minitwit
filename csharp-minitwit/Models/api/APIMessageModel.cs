@@ -7,4 +7,3 @@ public class APIMessageModel
     public long? pub_date { get; set; }
     public string? user { get; set; }
 }
-

@@ -1,14 +1,16 @@
 using System.Diagnostics;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Identity;
+
+using csharp_minitwit.ActionFilters;
 using csharp_minitwit.Models;
-using csharp_minitwit.Utils;
-using Microsoft.EntityFrameworkCore;
 using csharp_minitwit.Models.DTOs;
 using csharp_minitwit.Models.ViewModels;
 using csharp_minitwit.Services.Interfaces;
-using csharp_minitwit.ActionFilters;
 using csharp_minitwit.Services.Repositories;
+using csharp_minitwit.Utils;
+
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace csharp_minitwit.Controllers;
 
@@ -231,7 +233,8 @@ public class HomeController(
 
         var profileUser = await userRepository.GetByUsername(username);
 
-        if  (profileUser == null) {
+        if (profileUser == null)
+        {
             return NotFound();
         }
 

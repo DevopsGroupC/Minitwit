@@ -1,14 +1,17 @@
 using System.Reflection;
-using Microsoft.OpenApi.Models;
+
 using csharp_minitwit;
 using csharp_minitwit.ActionFilters;
-using csharp_minitwit.Services.Interfaces;
-using Microsoft.EntityFrameworkCore;
-using csharp_minitwit.Utils;
-using csharp_minitwit.Services.Repositories;
-using Microsoft.OpenApi.Models;
 using csharp_minitwit.Services;
+using csharp_minitwit.Services.Interfaces;
+using csharp_minitwit.Services.Repositories;
+using csharp_minitwit.Utils;
+
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.OpenApi.Models;
+using Microsoft.OpenApi.Models;
+
 using OpenTelemetry.Metrics;
 
 var builder = WebApplication.CreateBuilder(args);
