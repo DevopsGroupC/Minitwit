@@ -1,7 +1,9 @@
 using System.Diagnostics;
-using Microsoft.AspNetCore.Http;
 using System.Threading.Tasks;
+
 using csharp_minitwit.Utils;
+
+using Microsoft.AspNetCore.Http;
 // Assuming ApplicationMetrics is in the same namespace, or add the appropriate using statement
 
 namespace csharp_minitwit.Middlewares
