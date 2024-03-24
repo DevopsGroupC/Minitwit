@@ -72,7 +72,6 @@ else
     app.UseSwaggerUI();
 }
 
-app.UseMiddleware<CatchAllMiddleware>();
 app.UseStaticFiles();
 app.UseRouting();
 app.UseSession();
@@ -81,6 +80,7 @@ app.UseAuthorization();
 app.UseCookiePolicy();
 app.MapMetrics(); // "/metrics"
 app.UseHttpMetrics();
+app.UseMiddleware<CatchAllMiddleware>();
 
 app.MapControllerRoute(
     name: "default",

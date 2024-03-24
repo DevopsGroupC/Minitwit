@@ -9,7 +9,6 @@ using csharp_minitwit.Models.ViewModels;
 using csharp_minitwit.Services.Interfaces;
 using csharp_minitwit.ActionFilters;
 using csharp_minitwit.Services.Repositories;
-
 namespace csharp_minitwit.Controllers;
 
 public class HomeController(
@@ -228,16 +227,17 @@ public class HomeController(
     public async Task<IActionResult> FollowUser(string username)
     {
         var currentUserId = HttpContext.Session.GetInt32("user_id")!.Value;
-
         var profileUser = await userRepository.GetByUsername(username);
 
-        if  (profileUser == null) {
+        if (profileUser == null)
+        {
             return NotFound();
         }
 
         await followerRepository.Follow(currentUserId, profileUser.UserId);
 
         TempData[nameof(Message)] = $"You are now following {username}";
+
         return RedirectToAction(nameof(UserTimeline), new { username });
     }
 
