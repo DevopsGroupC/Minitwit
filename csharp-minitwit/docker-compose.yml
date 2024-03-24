@@ -38,6 +38,3 @@ services:
       - "3000:3000"
     networks:
       - main
-    environment:
-      GF_SECURITY_ADMIN_USER: "devops22"
-      GF_SECURITY_ADMIN_PASSWORD: "Helge&Friends"
