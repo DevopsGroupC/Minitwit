@@ -75,9 +75,11 @@ jobs:
             ssh -i ~/.ssh/preproduction -o StrictHostKeyChecking=no $SSH_USER@$SSH_HOST << 'EOF'
               export ConnectionStrings__DefaultConnection=${{ secrets.DB_CONNECTIONSTRING_STAGING }}
               cd /csharp-minitwit
+              printenv
               docker compose -f docker-compose.yml pull
               docker compose -f docker-compose.yml up -d
             EOF
         env:
           SSH_USER: ${{ secrets.SSH_USER }}
           SSH_HOST: ${{ secrets.SSH_HOST_PRE }}
+
