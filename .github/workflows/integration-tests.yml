@@ -1,0 +1,59 @@
+name: Integration Tests
+
+on:
+    pull_request:
+      branches:
+        - develop
+    push:
+      branches:
+        feature/54-implement-tests-to-workflow
+
+# Remember to set the following secrets in your repository's settings:
+# https://github.com/your_username/itu-minitwit-ci/settings/secrets/actions
+# DOCKER_USERNAME
+# DOCKER_PASSWORD
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+
+      - name: Build Docker image
+        uses: docker/build-push-action@v2
+        with:
+          context: ./csharp-minitwit
+          file: ./csharp-minitwit/Dockerfile
+          load: true
+          tags: ${{ secrets.DOCKER_USERNAME }}/csharptwitimage:latest
+
+      - name: Run container
+        run: docker run -d -p 5000:8080 -e ASPNETCORE_ENVIRONMENT=Development ${{ secrets.DOCKER_USERNAME }}/csharptwitimage:latest
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.11.7'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest
+          pip install requests
+
+      - name: Execute integration tests
+        run: pytest csharp-minitwit/Tests/refactored_minitwit_tests.py
+
+      - name: Execute api tests
+        run: pytest csharp-minitwit\Tests\API_Spec\minitwit_sim_api_test.py
