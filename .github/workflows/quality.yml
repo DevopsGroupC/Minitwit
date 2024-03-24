@@ -2,10 +2,6 @@ name: Format check on push
 on:
   pull_request:
     types: [opened, reopened, edited, synchronize, ready_for_review]
-  
-  push:
-    branches:
-      - feature/software-quality-tools
 
 jobs:
   dotnet-format:
@@ -41,5 +37,13 @@ jobs:
           git config user.name 'github-actions[bot]'
           git config user.email 'github-actions[bot]@users.noreply.github.com'
           git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/$GITHUB_REPOSITORY
-          git commit -am "Automated formatting"
-          git push
+          git fetch --all
+          git checkout 'origin/${{ github.head_ref }}'
+          git add .
+          # Check if there are any changes to commit
+          if git diff --staged --quiet; then
+            echo "No changes to commit."
+          else
+            git commit -am "Automated formatting"
+            git push
+          fi
