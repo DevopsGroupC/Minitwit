@@ -30,8 +30,17 @@ builder.Services.AddSession(options =>
 });
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 
-builder.Services.AddDbContext<MinitwitContext>(options =>
-options.UseNpgsql(connectionString));
+if (builder.Environment.IsDevelopment())
+{
+    builder.Services.AddDbContext<MinitwitContext>(options =>
+        options.UseSqlite(connectionString));
+}
+else
+{
+    builder.Services.AddDbContext<MinitwitContext>(options =>
+        options.UseNpgsql(connectionString));
+}
+
 
 builder.Services.AddScoped<IMessageRepository, MessageRepository>();
 builder.Services.AddScoped<IFollowerRepository, FollowerRepository>();
