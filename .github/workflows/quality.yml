@@ -1,8 +1,9 @@
 name: Format check on push
 on:
-  push:
-    branches:
-      - feature/software-quality-tools
+  pull_request:
+    - types: [opened, reopened, edited, synchronize, ready_for_review]
+    # branches:
+    #   - feature/software-quality-tools
 jobs:
   dotnet-format:
     runs-on: ubuntu-latest
