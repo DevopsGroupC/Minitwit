@@ -13,6 +13,8 @@ jobs:
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Fetches all history for all branches and tags
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
@@ -30,8 +32,7 @@ jobs:
           git config user.name 'github-actions[bot]'
           git config user.email 'github-actions[bot]@users.noreply.github.com'
           git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/DevopsGroupC/Minitwit
-          git fetch --all
-          git checkout ${{ github.head_ref }}
+          git checkout 'origin/${{ github.head_ref }}'
           git add .
           git commit -am "Automated formatting"
           git push
