@@ -40,7 +40,8 @@ jobs:
           git fetch --all
           git checkout -b ${{ github.head_ref }} origin/${{ github.head_ref }}
           git add .
-          # Check if there are any changes to commit          if git diff --staged --quiet; then
+          # Check if there are any changes to commit          
+          if git diff --staged --quiet; then
             echo "No changes to commit."
           else
             git commit -am "Automated formatting"
