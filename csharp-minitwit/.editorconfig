@@ -439,4 +439,4 @@ dotnet_diagnostic.S125.severity = None
 # 'System.Exception' should not be thrown by user code
 dotnet_diagnostic.S112.severity = None
 # Give an error if there is a TODO comment in code
-#sdotnet_diagnostic.S1135.severity = error
+sdotnet_diagnostic.S1135.severity = error
