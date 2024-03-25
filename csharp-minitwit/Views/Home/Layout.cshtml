@@ -1,6 +1,6 @@
 @inject IHttpContextAccessor _httpContext
 @{
-    var userId = _httpContext.HttpContext.Session.GetInt32("user_id");
+    var userId = _httpContext.HttpContext?.Session.GetInt32("user_id");
 }
 <!DOCTYPE html>
 <html lang="en">

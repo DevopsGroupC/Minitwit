@@ -1,3 +1,5 @@
+namespace csharp_minitwit.Models.DTOs;
+
 public class MessageDTO
 {
     public long MessageId { get; set; }
