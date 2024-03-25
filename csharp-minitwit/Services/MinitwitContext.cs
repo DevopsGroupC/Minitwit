@@ -1,3 +1,5 @@
+#pragma warning disable CS0649 
+
 using System;
 using System.Collections.Generic;
 
@@ -7,7 +9,7 @@ namespace csharp_minitwit;
 
 public partial class MinitwitContext : DbContext
 {
-    private readonly string _connectionString;
+    private readonly string? _connectionString;
 
     public MinitwitContext() { }
 
@@ -90,10 +92,6 @@ public partial class MinitwitContext : DbContext
                 .HasColumnName("username");
             entity.HasIndex(e => e.Username);
         });
-
-        OnModelCreatingPartial(modelBuilder);
     }
-
-
-    partial void OnModelCreatingPartial(ModelBuilder modelBuilder);
 }
+#pragma warning restore CS0649

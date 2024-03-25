@@ -2,7 +2,7 @@
 {
     public class MessageWithAuthorModel
     {
-        public Message Message { get; set; }
-        public User Author { get; set; }
+        public required Message Message { get; set; }
+        public required User Author { get; set; }
     }
 }

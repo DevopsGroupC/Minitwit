@@ -1,3 +1,5 @@
+#pragma warning disable S6934 // Specify the RouteAttribute when an HttpMethodAttribute or RouteAttribute is specified at an action level
+
 using System.Diagnostics;
 
 using csharp_minitwit.ActionFilters;
@@ -10,8 +12,6 @@ using csharp_minitwit.Services.Repositories;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
-using Microsoft.AspNetCore.Mvc.Filters;
-using Microsoft.EntityFrameworkCore.Query;
 using Microsoft.EntityFrameworkCore.Query;
 
 namespace csharp_minitwit.Controllers;
@@ -23,8 +23,8 @@ public class HomeController(
     IConfiguration configuration)
     : Controller
 {
-    private readonly int _perPage;
-    private readonly PasswordHasher<User> _passwordHasher;
+    private readonly int _perPage = configuration.GetValue<int>("Constant:PerPage");
+    private readonly PasswordHasher<User> _passwordHasher = new();
 
     /// <summary>
     /// Shows a users timeline or if no user is logged in it will redirect to the public timeline.
@@ -265,3 +265,4 @@ public class HomeController(
         return RedirectToAction(nameof(UserTimeline), new { username });
     }
 }
+#pragma warning restore S6934 //enabeling the warning again
