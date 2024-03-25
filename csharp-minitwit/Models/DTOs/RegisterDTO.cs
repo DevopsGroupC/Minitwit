@@ -18,4 +18,3 @@ public class RegisterDTO
     [Compare("Password", ErrorMessage = "The two passwords do not match")]
     public required string Password2 { get; set; }
 }
-
