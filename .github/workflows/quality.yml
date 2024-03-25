@@ -1,4 +1,4 @@
-name: Format check on push
+name: Format check
 on:
   pull_request:
     types: [opened, reopened, edited, synchronize, ready_for_review]
@@ -29,8 +29,8 @@ jobs:
         with:
           dockerfile: ./csharp-minitwit/Dockerfile
 
-    #  - name: Lint C# code
-      #  run: dotnet build
+      - name: Lint C# code
+        run: dotnet build
 
       - name: Push changes
         run: |

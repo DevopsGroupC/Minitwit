@@ -2,7 +2,6 @@ using System.Reflection;
 
 using csharp_minitwit;
 using csharp_minitwit.Middlewares;
-using csharp_minitwit.Middlewares;
 using csharp_minitwit.Services.Interfaces;
 using csharp_minitwit.Services.Repositories;
 
