@@ -419,7 +419,6 @@ dotnet_diagnostic.SA1009.severity = None
 dotnet_diagnostic.SA1111.severity = None
 # Braces should not be ommitted
 dotnet_diagnostic.SA1503.severity = None
-
 ##
 ## SonarAnalyzers.CSharp
 ##
@@ -439,3 +438,5 @@ dotnet_diagnostic.S1144.severity = None
 dotnet_diagnostic.S125.severity = None
 # 'System.Exception' should not be thrown by user code
 dotnet_diagnostic.S112.severity = None
+# Give an error if there is a TODO comment in code
+dotnet_diagnostic.S1135.severity = error
