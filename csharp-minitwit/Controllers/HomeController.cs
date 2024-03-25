@@ -23,8 +23,8 @@ public class HomeController(
     IConfiguration configuration)
     : Controller
 {
-    private readonly int _perPage = configuration.GetValue<int>("Constants:PerPage")!;
-    private readonly PasswordHasher<User> _passwordHasher = new();
+    private readonly int _perPage;
+    private readonly PasswordHasher<User> _passwordHasher;
 
     /// <summary>
     /// Shows a users timeline or if no user is logged in it will redirect to the public timeline.

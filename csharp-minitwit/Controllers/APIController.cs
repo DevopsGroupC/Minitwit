@@ -20,7 +20,7 @@ public class ApiController(
     IConfiguration configuration)
     : ControllerBase
 {
-    private readonly string _perPage = configuration.GetValue<string>("Constants:PerPage")!;
+    private readonly string _perPage;
 
     protected bool NotReqFromSimulator(HttpRequest request)
     {
