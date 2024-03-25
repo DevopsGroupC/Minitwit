@@ -23,7 +23,7 @@ public class HomeController(
     IConfiguration configuration)
     : Controller
 {
-    private readonly int _perPage = configuration.GetValue<int>("Constant:PerPage");
+    private readonly int _perPage = configuration.GetValue<int>("Constants:PerPage");
     private readonly PasswordHasher<User> _passwordHasher = new();
 
     /// <summary>
@@ -121,7 +121,6 @@ public class HomeController(
             }
             else
             {
-                Console.WriteLine("User logged in with id: " + user.UserId + " and username: " + user.Username);
                 HttpContext.Session.SetInt32("user_id", user.UserId);
                 HttpContext.Session.SetString("username", user.Username);
                 TempData["NewlyLoggedIn"] = true;

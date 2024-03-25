@@ -1,4 +1,3 @@
-#pragma warning disable CS0649 
 
 using System;
 using System.Collections.Generic;
@@ -9,7 +8,11 @@ namespace csharp_minitwit;
 
 public partial class MinitwitContext : DbContext
 {
+#pragma warning disable CS0649 
+#pragma warning disable S3459 // Unassigned members should be removed
     private readonly string? _connectionString;
+#pragma warning restore S3459 // Unassigned members should be removed
+#pragma warning restore CS0649
 
     public MinitwitContext() { }
 
@@ -94,4 +97,3 @@ public partial class MinitwitContext : DbContext
         });
     }
 }
-#pragma warning restore CS0649
