@@ -1,7 +1,7 @@
 name: Preproduction Deployment #shoutout to the exercises session
 
 on:
-  push: 
+  push:
     branches:
       - develop
   workflow_dispatch:
@@ -35,11 +35,12 @@ jobs:
         uses: docker/build-push-action@v2
         with:
           context: ./csharp-minitwit
-          file: ./csharp-minitwit/Dockerfile-pre
+          file: ./csharp-minitwit/Dockerfile
           push: true
           tags: ${{ secrets.DOCKER_USERNAME }}/csharptwit-preproduction:latest
           cache-from: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/csharptwit-preproduction:webbuildcache
           cache-to: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/csharptwit-preproduction:webbuildcache,mode=max
+          build-args: ENVIRONMENT=Preproduction
 
       #TODO: Add / adjust tests from py api maybe?
 
@@ -54,17 +55,30 @@ jobs:
       - name: Configure SSH
         run: |
           mkdir -p ~/.ssh/
-          echo "$SSH_KEY" > ~/.ssh/preproduction
-          chmod 600 ~/.ssh/preproduction
+          echo "$SSH_KEY" > ~/.ssh/staging_key
+          chmod 600 ~/.ssh/staging_key
         env:
           SSH_KEY: ${{ secrets.SSH_KEY_PRE }}
 
+      - name: Copy files to server
+        # Updating all files on remote server from the remote_files_preproduction
+        run: >
+          scp -i ~/.ssh/staging_key -o StrictHostKeyChecking=no
+          ./csharp-minitwit/remote_files_preproduction/* $SSH_USER@$SSH_HOST:/csharp-minitwit
+        env:
+          SSH_USER: ${{ secrets.SSH_USER }}
+          SSH_HOST: ${{ secrets.SSH_HOST_PRE }}
+
       - name: Deploy to server
         # Calls deploy.sh to pull csharp-minitwit image from Docker Hub and spin container up.
-        run: >
-          ssh $SSH_USER@$SSH_HOST
-          -i ~/.ssh/preproduction -o StrictHostKeyChecking=no
-          '/csharp-minitwit/deploy.sh'
+        run: |
+          ssh -i ~/.ssh/staging_key -o StrictHostKeyChecking=no $SSH_USER@$SSH_HOST << 'EOF'
+            export ConnectionStrings__DefaultConnection=${{ secrets.DB_CONNECTIONSTRING_STAGING }}
+            cd /csharp-minitwit
+            printenv
+            docker compose -f docker-compose.yml pull
+            docker compose -f docker-compose.yml up -d
+          EOF
         env:
           SSH_USER: ${{ secrets.SSH_USER }}
           SSH_HOST: ${{ secrets.SSH_HOST_PRE }}
