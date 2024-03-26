@@ -1,15 +1,10 @@
 using csharp_minitwit.Models;
 using csharp_minitwit.Models.DTOs;
 using csharp_minitwit.Services.Interfaces;
-using csharp_minitwit.Utils;
 
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Query;
 
 namespace csharp_minitwit.Controllers;
-
 
 [Route("api")]
 [ApiController]
@@ -20,18 +15,11 @@ public class ApiController(
     IConfiguration configuration)
     : ControllerBase
 {
-    private readonly string _perPage = configuration.GetValue<string>("Constants:PerPage")!;
+    private readonly int _perPage = configuration.GetValue<int>("Constants:PerPage");
 
     protected bool NotReqFromSimulator(HttpRequest request)
     {
-        if (request.Headers.TryGetValue("Authorization", out var fromSimulator))
-        {
-            if (fromSimulator.ToString() == "Basic c2ltdWxhdG9yOnN1cGVyX3NhZmUh")
-            {
-                return true;
-            }
-        }
-        return false;
+        return request.Headers.TryGetValue("Authorization", out var fromSimulator) && fromSimulator.ToString() == "Basic c2ltdWxhdG9yOnN1cGVyX3NhZmUh";
     }
 
     protected async Task<int?> GetUserIdAsync(string username)
@@ -88,13 +76,11 @@ public class ApiController(
             {
                 ModelState.AddModelError("Username", "The username is already taken");
             }
-            else if (await userRepository.InsertUser(model.username, model.email, model.pwd))
-            {
-                return NoContent();
-            }
             else
             {
-                return StatusCode(StatusCodes.Status500InternalServerError);
+                return await userRepository.InsertUser(model.username, model.email, model.pwd)
+                    ? NoContent()
+                    : (IActionResult)StatusCode(StatusCodes.Status500InternalServerError);
             }
         }
         return BadRequest(ModelState);
@@ -113,7 +99,7 @@ public class ApiController(
         if (!notFromSimResponse)
             return Unauthorized();
 
-        int messagesToFetch = no > 0 ? no : int.Parse(_perPage);
+        int messagesToFetch = no > 0 ? no : _perPage;
 
         var filteredMsgs = await messageRepository.GetApiMessagesAsync(messagesToFetch);
 
@@ -168,7 +154,7 @@ public class ApiController(
             return NotFound("User not found.");
         }
 
-        int messagesToFetch = no > 0 ? no : int.Parse(_perPage);
+        int messagesToFetch = no > 0 ? no : _perPage;
 
         var messages = await messageRepository.GetApiMessagesByAuthorAsync(messagesToFetch, userId.Value);
 
@@ -195,7 +181,7 @@ public class ApiController(
             return NotFound("User not found.");
         }
 
-        int messagesToFetch = no > 0 ? no : int.Parse(_perPage);
+        int messagesToFetch = no > 0 ? no : _perPage;
 
         var followerNames = await followerRepository.GetFollowingNames(messagesToFetch, userId.Value);
 

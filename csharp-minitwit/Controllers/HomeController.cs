@@ -1,3 +1,5 @@
+#pragma warning disable S6934 // Specify the RouteAttribute when an HttpMethodAttribute or RouteAttribute is specified at an action level
+
 using System.Diagnostics;
 
 using csharp_minitwit.ActionFilters;
@@ -6,8 +8,6 @@ using csharp_minitwit.Models.DTOs;
 using csharp_minitwit.Models.ViewModels;
 using csharp_minitwit.Services.Interfaces;
 using csharp_minitwit.Services.Repositories;
-using Microsoft.AspNetCore.Mvc.Filters;
-using Microsoft.EntityFrameworkCore.Query;
 
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -23,7 +23,7 @@ public class HomeController(
     IConfiguration configuration)
     : Controller
 {
-    private readonly int _perPage = configuration.GetValue<int>("Constants:PerPage")!;
+    private readonly int _perPage = configuration.GetValue<int>("Constants:PerPage");
     private readonly PasswordHasher<User> _passwordHasher = new();
 
     /// <summary>
@@ -121,7 +121,6 @@ public class HomeController(
             }
             else
             {
-                Console.WriteLine("User logged in with id: " + user.UserId + " and username: " + user.Username);
                 HttpContext.Session.SetInt32("user_id", user.UserId);
                 HttpContext.Session.SetString("username", user.Username);
                 TempData["NewlyLoggedIn"] = true;
@@ -265,3 +264,4 @@ public class HomeController(
         return RedirectToAction(nameof(UserTimeline), new { username });
     }
 }
+#pragma warning restore S6934 //enabeling the warning again
