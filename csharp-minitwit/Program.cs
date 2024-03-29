@@ -9,9 +9,18 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 
 using Prometheus;
+using Serilog;
+using Serilog.Sinks.Loki;
+using Serilog.Events;
 
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Initialize Serilog from appsettings.json configuration
+builder.Host.UseSerilog((context, services, configuration) => configuration
+    .ReadFrom.Configuration(context.Configuration)
+    .ReadFrom.Services(services)
+    .Enrich.FromLogContext());
 
 // Dependency injection
 builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
@@ -71,6 +80,9 @@ using (var scope = app.Services.CreateScope())
     var dbContext = scope.ServiceProvider.GetRequiredService<MinitwitContext>();
     dbContext.Database.Migrate();
 }
+
+// Log statement to indicate the application is starting
+Log.Information("Starting csharp-minitwit");
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment() || !app.Environment.IsStaging())
