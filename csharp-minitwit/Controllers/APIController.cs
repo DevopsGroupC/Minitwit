@@ -12,6 +12,7 @@ public class ApiController(
     IMessageRepository messageRepository,
     IFollowerRepository followerRepository,
     IUserRepository userRepository,
+    IMetaDataRepository metaDataRepository,
     IConfiguration configuration)
     : ControllerBase
 {
@@ -28,33 +29,25 @@ public class ApiController(
     }
 
     [HttpGet("latest")]
-    public IActionResult GetLatest()
+    public async Task<IActionResult> GetLatest()
     {
-        int latestProcessedCommandID;
-        try
-        {
-            var latest = System.IO.File.ReadAllText("Services/latest_processed_sim_action_id.txt");
-            latestProcessedCommandID = int.Parse(latest);
-        }
-        catch (Exception)
-        {
-            latestProcessedCommandID = -1;
-        }
-        return Ok(new { latest = latestProcessedCommandID });
+        var latest = await metaDataRepository.GetLatestAsync();
+        return Ok(new { latest });
     }
 
-    protected void UpdateLatest(int? latest)
+    protected async Task UpdateLatest(int? latest)
     {
-
-        System.IO.File.WriteAllText("Services/latest_processed_sim_action_id.txt", latest.ToString());
-
+        if (latest.HasValue)
+        {
+            await metaDataRepository.SetLatestAsync(latest.Value);
+        }
     }
 
     [HttpPost("register")]
     public async Task<IActionResult> Register([FromBody] APIRegisterModel model, int? latest)
     {
 
-        UpdateLatest(latest);
+        await UpdateLatest(latest);
 
         if (ModelState.IsValid)
         {
@@ -91,7 +84,7 @@ public class ApiController(
     {
         if (latest != null)
         {
-            UpdateLatest(latest);
+            await UpdateLatest(latest);
         }
 
         // Check if request is from simulator
@@ -111,7 +104,7 @@ public class ApiController(
     {
         if (latest != null)
         {
-            UpdateLatest(latest);
+            await UpdateLatest(latest);
         }
 
         // Check if request is from simulator
@@ -140,7 +133,7 @@ public class ApiController(
     {
         if (latest != null)
         {
-            UpdateLatest(latest);
+            await UpdateLatest(latest);
         }
 
         // Check if request is from simulator
@@ -167,7 +160,7 @@ public class ApiController(
     {
         if (latest != null)
         {
-            UpdateLatest(latest);
+            await UpdateLatest(latest);
         }
 
         // Check if request is from simulator
@@ -198,7 +191,7 @@ public class ApiController(
     {
         if (latest != null)
         {
-            UpdateLatest(latest);
+            await UpdateLatest(latest);
         }
 
         // Check if request is from simulator

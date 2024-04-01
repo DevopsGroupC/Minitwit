@@ -1,4 +1,5 @@
-﻿using csharp_minitwit.Services.Interfaces;
+﻿using csharp_minitwit.Models.Entities;
+using csharp_minitwit.Services.Interfaces;
 
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -48,7 +49,7 @@ namespace csharp_minitwit.Services.Repositories
             }
             catch (Exception ex)
             {
-                // Todo: Add logging
+                // Todo: Add logging?
                 Console.WriteLine(ex);
                 return false;
             }

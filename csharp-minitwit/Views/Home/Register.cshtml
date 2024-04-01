@@ -11,7 +11,7 @@
 <h2>Sign Up</h2>
 @if (msEntries.Any())
 {
-    var firstError = msEntries.SelectMany(ms => ms.Value.Errors).Select(e => e.ErrorMessage).FirstOrDefault();
+    var firstError = msEntries.SelectMany(ms => ms.Value!.Errors).Select(e => e.ErrorMessage).FirstOrDefault();
     if (!string.IsNullOrEmpty(firstError))
     {
         <div class="error"><strong>Error:</strong> @firstError</div>
