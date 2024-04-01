@@ -1,5 +1,6 @@
 using System.Diagnostics;
 
+using csharp_minitwit.Models.Entities;
 using csharp_minitwit.Services.Interfaces;
 using csharp_minitwit.Utils;
 

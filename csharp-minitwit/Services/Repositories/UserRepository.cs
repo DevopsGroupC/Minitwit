@@ -1,4 +1,5 @@
-﻿using csharp_minitwit.Services.Interfaces;
+﻿using csharp_minitwit.Models.Entities;
+using csharp_minitwit.Services.Interfaces;
 
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;

@@ -1,4 +1,6 @@
-﻿namespace csharp_minitwit.Models.ViewModels
+﻿using csharp_minitwit.Models.Entities;
+
+namespace csharp_minitwit.Models.ViewModels
 {
     public class MessageWithAuthorModel
     {
