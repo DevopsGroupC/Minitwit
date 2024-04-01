@@ -47,7 +47,7 @@ public class ApiController(
     public async Task<IActionResult> Register([FromBody] APIRegisterModel model, int? latest)
     {
 
-        UpdateLatest(latest);
+        await UpdateLatest(latest);
 
         if (ModelState.IsValid)
         {
@@ -84,7 +84,7 @@ public class ApiController(
     {
         if (latest != null)
         {
-            UpdateLatest(latest);
+            await UpdateLatest(latest);
         }
 
         // Check if request is from simulator
@@ -104,7 +104,7 @@ public class ApiController(
     {
         if (latest != null)
         {
-            UpdateLatest(latest);
+            await UpdateLatest(latest);
         }
 
         // Check if request is from simulator
@@ -133,7 +133,7 @@ public class ApiController(
     {
         if (latest != null)
         {
-            UpdateLatest(latest);
+            await UpdateLatest(latest);
         }
 
         // Check if request is from simulator
@@ -160,7 +160,7 @@ public class ApiController(
     {
         if (latest != null)
         {
-            UpdateLatest(latest);
+            await UpdateLatest(latest);
         }
 
         // Check if request is from simulator
@@ -191,7 +191,7 @@ public class ApiController(
     {
         if (latest != null)
         {
-            UpdateLatest(latest);
+            await UpdateLatest(latest);
         }
 
         // Check if request is from simulator
