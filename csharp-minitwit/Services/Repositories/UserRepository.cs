@@ -49,7 +49,7 @@ namespace csharp_minitwit.Services.Repositories
             }
             catch (Exception ex)
             {
-                // Todo: Add logging
+                // Todo: Add logging?
                 Console.WriteLine(ex);
                 return false;
             }
