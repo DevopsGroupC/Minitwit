@@ -19,6 +19,7 @@ public class ApiController(
     IMessageRepository messageRepository,
     IFollowerRepository followerRepository,
     IUserRepository userRepository,
+    IMetaDataRepository metaDataRepository,
     IConfiguration configuration,
     ILogger<ApiController> logger)
     : ControllerBase
@@ -42,36 +43,25 @@ public class ApiController(
     }
 
     [HttpGet("latest")]
-    public IActionResult GetLatest()
+    public async Task<IActionResult> GetLatest()
     {
-        _logger.LogInformation("Getting the latest processed command ID");
-        int latestProcessedCommandID;
-        try
-        {
-            var latest = System.IO.File.ReadAllText("Services/latest_processed_sim_action_id.txt");
-            latestProcessedCommandID = int.Parse(latest);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to retrieve the latest processed command ID");
-            latestProcessedCommandID = -1;
-            return StatusCode(StatusCodes.Status500InternalServerError, "Failed to retrieve the latest processed command ID");
-        }
-        return Ok(new { latest = latestProcessedCommandID });
+        var latest = await metaDataRepository.GetLatestAsync();
+        return Ok(new { latest });
     }
 
-    protected void UpdateLatest(int? latest)
+    protected async Task UpdateLatest(int? latest)
     {
-
-        System.IO.File.WriteAllText("Services/latest_processed_sim_action_id.txt", latest.ToString());
-
+        if (latest.HasValue)
+        {
+            await metaDataRepository.SetLatestAsync(latest.Value);
+        }
     }
 
     [HttpPost("register")]
     public async Task<IActionResult> Register([FromBody] APIRegisterModel model, int? latest)
     {
         _logger.LogInformation("Registering a new user: {Username}", model.username);
-        UpdateLatest(latest);
+        await UpdateLatest(latest);
 
         if (ModelState.IsValid)
         {
@@ -118,7 +108,7 @@ public class ApiController(
     {
         if (latest != null)
         {
-            UpdateLatest(latest);
+            await UpdateLatest(latest);
         }
 
         // Check if request is from simulator
@@ -141,7 +131,7 @@ public class ApiController(
         _logger.LogInformation("Posting a new message for user {Username}", username);
         if (latest != null)
         {
-            UpdateLatest(latest);
+            await UpdateLatest(latest);
         }
 
         // Check if request is from simulator
@@ -176,7 +166,7 @@ public class ApiController(
         {
             if (latest != null)
             {
-                UpdateLatest(latest);
+                await UpdateLatest(latest);
             }
 
             // Check if request is from simulator
@@ -215,7 +205,7 @@ public class ApiController(
         {
             if (latest != null)
             {
-                UpdateLatest(latest);
+                await UpdateLatest(latest);
             }
 
             // Check if request is from simulator
@@ -256,7 +246,7 @@ public class ApiController(
         
         if (latest != null)
         {
-            UpdateLatest(latest);
+            await UpdateLatest(latest);
         }
 
         // Check if request is from simulator

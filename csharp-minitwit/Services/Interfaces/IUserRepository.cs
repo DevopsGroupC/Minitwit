@@ -1,4 +1,6 @@
-﻿namespace csharp_minitwit.Services.Interfaces;
+﻿using csharp_minitwit.Models.Entities;
+
+namespace csharp_minitwit.Services.Interfaces;
 
 public interface IUserRepository
 {

@@ -11,11 +11,8 @@ services:
       - main
     ports:
       - "5000:8080"
-    volumes:
-      - /mnt/database:/app/Databases/volume
     environment:
       - ConnectionStrings__DefaultConnection=${ConnectionStrings__DefaultConnection}
-
 
   prometheus:
     image: prom/prometheus

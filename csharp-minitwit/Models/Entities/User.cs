@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace csharp_minitwit;
+namespace csharp_minitwit.Models.Entities;
 
 public partial class User
 {

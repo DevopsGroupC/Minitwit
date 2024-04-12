@@ -5,6 +5,7 @@ using System.Diagnostics;
 using csharp_minitwit.ActionFilters;
 using csharp_minitwit.Models;
 using csharp_minitwit.Models.DTOs;
+using csharp_minitwit.Models.Entities;
 using csharp_minitwit.Models.ViewModels;
 using csharp_minitwit.Services.Interfaces;
 using csharp_minitwit.Services.Repositories;

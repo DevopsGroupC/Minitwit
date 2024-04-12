@@ -58,7 +58,7 @@ else
 builder.Services.AddScoped<IMessageRepository, MessageRepository>();
 builder.Services.AddScoped<IFollowerRepository, FollowerRepository>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
-
+builder.Services.AddScoped<IMetaDataRepository, MetaDataRepository>();
 
 builder.Services.AddControllersWithViews();
 builder.Services.AddControllers();
