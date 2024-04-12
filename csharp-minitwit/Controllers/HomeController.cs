@@ -20,11 +20,13 @@ public class HomeController(
     IMessageRepository messageRepository,
     IFollowerRepository followerRepository,
     IUserRepository userRepository,
-    IConfiguration configuration)
+    IConfiguration configuration,
+    ILogger<HomeController> logger)
     : Controller
 {
     private readonly int _perPage = configuration.GetValue<int>("Constants:PerPage");
     private readonly PasswordHasher<User> _passwordHasher = new();
+    private readonly ILogger<HomeController> _logger = logger;
 
     /// <summary>
     /// Shows a users timeline or if no user is logged in it will redirect to the public timeline.
@@ -87,21 +89,25 @@ public class HomeController(
         await messageRepository.AddMessageAsync(text, userId);
 
         TempData["MessageRecorded"] = true;
-
+        
+        _logger.LogInformation("Message added by user {UserId}", userId);
         return Redirect("/");
     }
 
     [HttpPost("/login")]
     public async Task<IActionResult> Login([FromForm] LoginDTO model)
     {
+
         if (!ModelState.IsValid)
         {
             ViewBag.registrationSuccess = false;
+            _logger.LogWarning("Login failed for user: {Username}", model.Username);
             return View(nameof(Login));
         }
 
         if (!string.IsNullOrEmpty(HttpContext.Session.GetString("user_id")))
         {
+            _logger.LogWarning("User already logged in: {Username}", model.Username);
             return Redirect("/");
         }
 
@@ -112,11 +118,13 @@ public class HomeController(
 
             if (user == null)
             {
+                _logger.LogWarning("Invalid username: {Username}", model.Username);
                 error = "Invalid username";
             }
             else if (model.Password == null
             || _passwordHasher.VerifyHashedPassword(user, user.PwHash, model.Password) == PasswordVerificationResult.Failed)
             {
+                _logger.LogWarning("Invalid password for user: {Username}", model.Username);
                 error = "Invalid password";
             }
             else
@@ -124,6 +132,7 @@ public class HomeController(
                 HttpContext.Session.SetInt32("user_id", user.UserId);
                 HttpContext.Session.SetString("username", user.Username);
                 TempData["NewlyLoggedIn"] = true;
+                _logger.LogInformation("User {Username} logged in", model.Username);
                 return RedirectToAction(nameof(Timeline));
             }
         }
@@ -133,6 +142,7 @@ public class HomeController(
             ModelState.AddModelError("", error); // Add error to entire form
         }
 
+        _logger.LogWarning("Login failed for user: {Username}", model.Username);
         return View(nameof(Login));
     }
 
@@ -155,6 +165,7 @@ public class HomeController(
     {
         HttpContext.Session.Clear();
         TempData["NewlyLoggedOut"] = true;
+        _logger.LogInformation("User logged out");
         return RedirectToAction(nameof(PublicTimeline));
     }
 
@@ -169,6 +180,7 @@ public class HomeController(
     {
         if (await userRepository.UserExists(model.Username))
         {
+            _logger.LogWarning("Username already taken: {Username}", model.Username);
             ModelState.AddModelError("Username", "The username is already taken");
         }
 
@@ -176,11 +188,14 @@ public class HomeController(
         {
             if (await userRepository.InsertUser(model.Username, model.Email, model.Password))
             {
+                _logger.LogInformation("User {Username} registered", model.Username);
                 return RedirectToAction(nameof(Login), new { registrationSuccess = true });
             }
+            _logger.LogError("Failed to register user: {Username}", model.Username);
             return StatusCode(StatusCodes.Status500InternalServerError);
         }
 
+        _logger.LogWarning("Failed to register user: {Username}", model.Username);
         return View(model);
     }
 
