@@ -115,14 +115,8 @@ public class ApiController(
 
         // Check if request is from simulator
         var notFromSimResponse = NotReqFromSimulator(Request);
-<<<<<<< HEAD
         if (!notFromSimResponse){
             _logger.LogWarning(logMessageUnauthorized, Request.HttpContext.Connection.RemoteIpAddress);
-=======
-        if (!notFromSimResponse)
-        {
-            _logger.LogWarning("Unauthorized request from {IP}", Request.HttpContext.Connection.RemoteIpAddress);
->>>>>>> 89580177cb5a0b77473d57e1be0272e1e338827f
             return Unauthorized();
         }
         int messagesToFetch = no > 0 ? no : _perPage;
@@ -144,14 +138,8 @@ public class ApiController(
 
         // Check if request is from simulator
         var notFromSimResponse = NotReqFromSimulator(Request);
-<<<<<<< HEAD
         if (!notFromSimResponse){
             _logger.LogWarning(logMessageUnauthorized, Request.HttpContext.Connection.RemoteIpAddress);
-=======
-        if (!notFromSimResponse)
-        {
-            _logger.LogWarning("Unauthorized request from {IP}", Request.HttpContext.Connection.RemoteIpAddress);
->>>>>>> 89580177cb5a0b77473d57e1be0272e1e338827f
             return Unauthorized();
         }
         if (!string.IsNullOrEmpty(model.content))
@@ -185,14 +173,8 @@ public class ApiController(
 
             // Check if request is from simulator
             var notFromSimResponse = NotReqFromSimulator(Request);
-<<<<<<< HEAD
             if (!notFromSimResponse){
                 _logger.LogWarning(logMessageUnauthorized, Request.HttpContext.Connection.RemoteIpAddress);
-=======
-            if (!notFromSimResponse)
-            {
-                _logger.LogWarning("Unauthorized request from {IP}", Request.HttpContext.Connection.RemoteIpAddress);
->>>>>>> 89580177cb5a0b77473d57e1be0272e1e338827f
                 return Unauthorized();
             }
             var userId = await GetUserIdAsync(username);
@@ -230,14 +212,8 @@ public class ApiController(
 
             // Check if request is from simulator
             var notFromSimResponse = NotReqFromSimulator(Request);
-<<<<<<< HEAD
             if (!notFromSimResponse){
                 _logger.LogWarning(logMessageUnauthorized, Request.HttpContext.Connection.RemoteIpAddress);
-=======
-            if (!notFromSimResponse)
-            {
-                _logger.LogWarning("Unauthorized request from {IP}", Request.HttpContext.Connection.RemoteIpAddress);
->>>>>>> 89580177cb5a0b77473d57e1be0272e1e338827f
                 return Unauthorized();
             }
             var userId = await GetUserIdAsync(username);
@@ -277,14 +253,8 @@ public class ApiController(
 
         // Check if request is from simulator
         var notFromSimResponse = NotReqFromSimulator(Request);
-<<<<<<< HEAD
         if (!notFromSimResponse){
             _logger.LogWarning(logMessageUnauthorized, Request.HttpContext.Connection.RemoteIpAddress);
-=======
-        if (!notFromSimResponse)
-        {
-            _logger.LogWarning("Unauthorized request from {IP}", Request.HttpContext.Connection.RemoteIpAddress);
->>>>>>> 89580177cb5a0b77473d57e1be0272e1e338827f
             return Unauthorized();
         }
 
