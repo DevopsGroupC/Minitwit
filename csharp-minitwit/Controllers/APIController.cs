@@ -26,7 +26,7 @@ public class ApiController(
 {
     private readonly int _perPage = configuration.GetValue<int>("Constants:PerPage");
     private readonly ILogger<ApiController> _logger = logger;
-    
+
     private readonly string logMessageUnauthorized = "Unauthorized request from {IP}";
     private readonly string logMessageUserNotFound = "User not found: {Username}";
 
@@ -116,7 +116,8 @@ public class ApiController(
 
         // Check if request is from simulator
         var notFromSimResponse = NotReqFromSimulator(Request);
-        if (!notFromSimResponse){
+        if (!notFromSimResponse)
+        {
             _logger.LogWarning(logMessageUnauthorized, Request.HttpContext.Connection.RemoteIpAddress);
             return Unauthorized();
         }
@@ -139,7 +140,8 @@ public class ApiController(
 
         // Check if request is from simulator
         var notFromSimResponse = NotReqFromSimulator(Request);
-        if (!notFromSimResponse){
+        if (!notFromSimResponse)
+        {
             _logger.LogWarning(logMessageUnauthorized, Request.HttpContext.Connection.RemoteIpAddress);
             return Unauthorized();
         }
@@ -174,7 +176,8 @@ public class ApiController(
 
             // Check if request is from simulator
             var notFromSimResponse = NotReqFromSimulator(Request);
-            if (!notFromSimResponse){
+            if (!notFromSimResponse)
+            {
                 _logger.LogWarning(logMessageUnauthorized, Request.HttpContext.Connection.RemoteIpAddress);
                 return Unauthorized();
             }
@@ -213,7 +216,8 @@ public class ApiController(
 
             // Check if request is from simulator
             var notFromSimResponse = NotReqFromSimulator(Request);
-            if (!notFromSimResponse){
+            if (!notFromSimResponse)
+            {
                 _logger.LogWarning(logMessageUnauthorized, Request.HttpContext.Connection.RemoteIpAddress);
                 return Unauthorized();
             }
@@ -254,7 +258,8 @@ public class ApiController(
 
         // Check if request is from simulator
         var notFromSimResponse = NotReqFromSimulator(Request);
-        if (!notFromSimResponse){
+        if (!notFromSimResponse)
+        {
             _logger.LogWarning(logMessageUnauthorized, Request.HttpContext.Connection.RemoteIpAddress);
             return Unauthorized();
         }
