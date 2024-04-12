@@ -9,9 +9,10 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 
 using Prometheus;
+
 using Serilog;
-using Serilog.Sinks.Loki;
 using Serilog.Events;
+using Serilog.Sinks.Loki;
 
 
 var builder = WebApplication.CreateBuilder(args);

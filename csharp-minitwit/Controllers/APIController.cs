@@ -1,3 +1,6 @@
+using System;
+using System.Threading.Tasks;
+
 using csharp_minitwit.Models;
 using csharp_minitwit.Models.DTOs;
 using csharp_minitwit.Services.Interfaces;
@@ -6,9 +9,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 
 using OpenTelemetry.Trace;
-
-using System;
-using System.Threading.Tasks;
 
 namespace csharp_minitwit.Controllers;
 
@@ -86,7 +86,7 @@ public class ApiController(
             else
             {
                 var result = await userRepository.InsertUser(model.username, model.email, model.pwd);
-                if(result) 
+                if (result)
                 {
                     _logger.LogInformation("Successfully registered a new user: {Username}", model.username);
                     return NoContent();
@@ -99,7 +99,7 @@ public class ApiController(
             }
         }
         var modelErrors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage);
-        _logger.LogWarning("User registration failed for {Username}. Errors: {ModelErrors}", model.username,  string.Join(", ", modelErrors));  
+        _logger.LogWarning("User registration failed for {Username}. Errors: {ModelErrors}", model.username, string.Join(", ", modelErrors));
         return BadRequest(ModelState);
     }
 
@@ -113,7 +113,8 @@ public class ApiController(
 
         // Check if request is from simulator
         var notFromSimResponse = NotReqFromSimulator(Request);
-        if (!notFromSimResponse){
+        if (!notFromSimResponse)
+        {
             _logger.LogWarning("Unauthorized request from {IP}", Request.HttpContext.Connection.RemoteIpAddress);
             return Unauthorized();
         }
@@ -136,7 +137,8 @@ public class ApiController(
 
         // Check if request is from simulator
         var notFromSimResponse = NotReqFromSimulator(Request);
-        if (!notFromSimResponse){
+        if (!notFromSimResponse)
+        {
             _logger.LogWarning("Unauthorized request from {IP}", Request.HttpContext.Connection.RemoteIpAddress);
             return Unauthorized();
         }
@@ -171,7 +173,8 @@ public class ApiController(
 
             // Check if request is from simulator
             var notFromSimResponse = NotReqFromSimulator(Request);
-            if (!notFromSimResponse){
+            if (!notFromSimResponse)
+            {
                 _logger.LogWarning("Unauthorized request from {IP}", Request.HttpContext.Connection.RemoteIpAddress);
                 return Unauthorized();
             }
@@ -186,8 +189,8 @@ public class ApiController(
 
             var messages = await messageRepository.GetApiMessagesByAuthorAsync(messagesToFetch, userId.Value);
 
-        _logger.LogInformation("Successfully retrieved messages for user {Username}", username);
-        return Ok(messages);
+            _logger.LogInformation("Successfully retrieved messages for user {Username}", username);
+            return Ok(messages);
         }
         catch (Exception ex)
         {
@@ -210,7 +213,8 @@ public class ApiController(
 
             // Check if request is from simulator
             var notFromSimResponse = NotReqFromSimulator(Request);
-            if (!notFromSimResponse){
+            if (!notFromSimResponse)
+            {
                 _logger.LogWarning("Unauthorized request from {IP}", Request.HttpContext.Connection.RemoteIpAddress);
                 return Unauthorized();
             }
@@ -243,7 +247,7 @@ public class ApiController(
     [HttpPost("fllws/{username}")]
     public async Task<IActionResult> FollowUser(string username, [FromBody] FollowActionDto followAction, int? latest)
     {
-        
+
         if (latest != null)
         {
             await UpdateLatest(latest);
@@ -251,7 +255,8 @@ public class ApiController(
 
         // Check if request is from simulator
         var notFromSimResponse = NotReqFromSimulator(Request);
-        if (!notFromSimResponse){
+        if (!notFromSimResponse)
+        {
             _logger.LogWarning("Unauthorized request from {IP}", Request.HttpContext.Connection.RemoteIpAddress);
             return Unauthorized();
         }

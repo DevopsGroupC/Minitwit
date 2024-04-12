@@ -90,7 +90,7 @@ public class HomeController(
         await messageRepository.AddMessageAsync(text, userId);
 
         TempData["MessageRecorded"] = true;
-        
+
         _logger.LogInformation("Message added by user {UserId}", userId);
         return Redirect("/");
     }
