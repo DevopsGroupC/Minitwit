@@ -1,12 +1,12 @@
 using System.Diagnostics;
 using System.Threading.Tasks;
+using System.Threading.Tasks;
 
 using csharp_minitwit.Utils;
 
 using Microsoft.AspNetCore.Http;
 // Assuming ApplicationMetrics is in the same namespace, or add the appropriate using statement
 using Microsoft.Extensions.Logging;
-using System.Threading.Tasks;
 
 namespace csharp_minitwit.Middlewares
 {
@@ -27,13 +27,16 @@ namespace csharp_minitwit.Middlewares
 
             // Used to monitor total requests received grouped by endpoint
             ApplicationMetrics.HttpRequestTotal.WithLabels(MetricsHelpers.SanitizePath(context.Request.Path)).Inc();
-            try {
+            try
+            {
                 await _next(context);
             }
-            catch (Exception ex) {
+            catch (Exception ex)
+            {
                 _logger.LogError(ex, "An error occurred processing the request for {Path}", context.Request.Path);
             }
-            finally {
+            finally
+            {
                 watch.Stop();
                 // Used to monitor response delay grouped by endpoint
                 ApplicationMetrics.HttpRequestDuration
