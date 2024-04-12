@@ -28,7 +28,6 @@ public class ApiController(
     private readonly ILogger<ApiController> _logger = logger;
 
     private readonly string logMessageUnauthorized = "Unauthorized request from {IP}";
-    private readonly string logMessageUserNotFound = "User not found: {Username}";
 
     protected bool NotReqFromSimulator(HttpRequest request)
     {
@@ -277,13 +276,13 @@ public class ApiController(
             var followsUserId = await GetUserIdAsync(followAction.Follow);
             if (!followsUserId.HasValue)
             {
-                _logger.LogWarning(logMessageUserNotFound, followAction.Follow);
+                _logger.LogWarning("Follow target user not found: {TargetUsername}", followAction.Follow);
                 return NotFound($"User '{followAction.Follow}' not found.");
             }
 
             await followerRepository.Follow(userId.Value, followsUserId.Value);
 
-            _logger.LogInformation("Successfully followed user {Username}", followAction.Follow);
+            _logger.LogInformation("Follow action: {ActionType}, Initiator: {Username}, Target: {TargetUsername}", "Follow", username, followAction.Follow);
             return Ok($"Successfully followed user '{followsUserId}'.");
         }
 
@@ -293,7 +292,7 @@ public class ApiController(
             var followsUserId = await GetUserIdAsync(followAction.Unfollow);
             if (!followsUserId.HasValue)
             {
-                _logger.LogWarning(logMessageUserNotFound, followAction.Unfollow);
+                _logger.LogWarning("Unfollow target user not found: {TargetUsername}", followAction.Unfollow);
                 return NotFound($"User '{followAction.Unfollow}' not found.");
             }
 
@@ -301,7 +300,7 @@ public class ApiController(
 
             if (unfollowed)
             {
-                _logger.LogInformation("Successfully unfollowed user {Username}", followAction.Unfollow);
+                _logger.LogInformation("Unfollow action: {ActionType}, Initiator: {Username}, Target: {TargetUsername}", "Unfollow", username, followAction.Unfollow);
                 return Ok($"Successfully unfollowed user '{followsUserId}'.");
             }
         }
