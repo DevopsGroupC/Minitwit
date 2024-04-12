@@ -77,7 +77,26 @@ jobs:
             cd /csharp-minitwit
             printenv
             docker compose -f docker-compose.yml pull
-            docker compose -f docker-compose.yml up -d
+            
+            # Check if Docker Swarm is initialized, initialize if not
+            if ! docker node ls > /dev/null 2>&1; then
+              echo "Initializing Docker Swarm..."
+              docker swarm init
+            else
+              echo "Docker Swarm is already initialized."
+            fi
+
+            # Check if the stack is already deployed
+            if docker stack ls | grep -q minitwit; then
+              echo "Removing existing stack 'minitwit'..."
+              docker stack rm minitwit
+              # Wait a few seconds to ensure the stack is fully removed
+              sleep 10
+            fi
+
+            # Deploy the stack
+            echo "Deploying stack 'minitwit'..."
+            docker stack deploy -c docker-compose.yml minitwit
           EOF
         env:
           SSH_USER: ${{ secrets.SSH_USER }}
