@@ -3,7 +3,7 @@ name: Preproduction Deployment #shoutout to the exercises session
 on:
   push:
     branches:
-      - develop
+      - feat/add-swarm-preproduction
   workflow_dispatch:
 
 # The following secrets are required from the repository's settings:
@@ -58,7 +58,7 @@ jobs:
           echo "$SSH_KEY" > ~/.ssh/staging_key
           chmod 600 ~/.ssh/staging_key
         env:
-          SSH_KEY: ${{ secrets.SSH_KEY_PRE }}
+          SSH_KEY: ${{ secrets.SWARM_KEY }}
 
       - name: Copy files to server
         # Updating all files on remote server from the remote_files_preproduction
