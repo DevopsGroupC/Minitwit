@@ -6,6 +6,7 @@ using csharp_minitwit.Services.Interfaces;
 using csharp_minitwit.Services.Repositories;
 
 using Microsoft.EntityFrameworkCore;
+using Microsoft.OpenApi.Models;
 
 using Prometheus;
 
