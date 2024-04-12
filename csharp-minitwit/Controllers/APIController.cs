@@ -28,6 +28,7 @@ public class ApiController(
     private readonly ILogger<ApiController> _logger = logger;
     
     private readonly string logMessageUnauthorized = "Unauthorized request from {IP}";
+    private readonly string logMessageUserNotFound = "User not found: {Username}";
 
     protected bool NotReqFromSimulator(HttpRequest request)
     {
@@ -147,7 +148,7 @@ public class ApiController(
             var userId = await GetUserIdAsync(username);
             if (!userId.HasValue)
             {
-                _logger.LogWarning("User not found: {Username}", username);
+                _logger.LogWarning(logMessageUserNotFound, username);
                 return BadRequest("Invalid username.");
             }
 
@@ -180,7 +181,7 @@ public class ApiController(
             var userId = await GetUserIdAsync(username);
             if (!userId.HasValue)
             {
-                _logger.LogWarning("User not found: {Username}", username);
+                _logger.LogWarning(logMessageUserNotFound, username);
                 return NotFound("User not found.");
             }
 
@@ -219,7 +220,7 @@ public class ApiController(
             var userId = await GetUserIdAsync(username);
             if (!userId.HasValue)
             {
-                _logger.LogWarning("User not found: {Username}", username);
+                _logger.LogWarning(logMessageUserNotFound, username);
                 return NotFound("User not found.");
             }
 
@@ -261,7 +262,7 @@ public class ApiController(
         var userId = await GetUserIdAsync(username);
         if (!userId.HasValue)
         {
-            _logger.LogWarning("User not found: {Username}", username);
+            _logger.LogWarning(logMessageUserNotFound, username);
             return NotFound("User not found.");
         }
 
@@ -271,7 +272,7 @@ public class ApiController(
             var followsUserId = await GetUserIdAsync(followAction.Follow);
             if (!followsUserId.HasValue)
             {
-                _logger.LogWarning("User not found: {Username}", followAction.Follow);
+                _logger.LogWarning(logMessageUserNotFound, followAction.Follow);
                 return NotFound($"User '{followAction.Follow}' not found.");
             }
 
@@ -287,7 +288,7 @@ public class ApiController(
             var followsUserId = await GetUserIdAsync(followAction.Unfollow);
             if (!followsUserId.HasValue)
             {
-                _logger.LogWarning("User not found: {Username}", followAction.Unfollow);
+                _logger.LogWarning(logMessageUserNotFound, followAction.Unfollow);
                 return NotFound($"User '{followAction.Unfollow}' not found.");
             }
 
