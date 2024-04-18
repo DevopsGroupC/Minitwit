@@ -4,7 +4,6 @@ using csharp_minitwit.Models.DTOs;
 using csharp_minitwit.Services.Interfaces;
 
 using Microsoft.AspNetCore.Mvc;
-
 namespace csharp_minitwit.Controllers;
 
 [Route("api")]
@@ -120,7 +119,6 @@ public class ApiController(
 
         var filteredMsgs = await messageRepository.GetApiMessagesAsync(messagesToFetch);
 
-        _logger.LogInformation("Successfully retrieved messages");
         return Ok(filteredMsgs);
     }
 
@@ -146,12 +144,11 @@ public class ApiController(
             if (!userId.HasValue)
             {
                 _logger.LogWarning(logMessageUserNotFound, username);
-                return BadRequest("Invalid username.");
+                return NotFound("User not found.");
             }
 
             await messageRepository.AddMessageAsync(model.content, userId.Value);
 
-            _logger.LogInformation("Successfully posted a new message for user {Username}", username);
             return NoContent();
         }
         _logger.LogWarning("Content cannot be empty for user {Username}", username);
@@ -232,7 +229,6 @@ public class ApiController(
                 follows = followerNames
             };
 
-            _logger.LogInformation("Successfully retrieved followers for user {Username}", username);
             return Ok(followersResponse);
         }
         catch (Exception ex)
@@ -251,6 +247,7 @@ public class ApiController(
             await UpdateLatest(latest);
         }
 
+
         // Check if request is from simulator
         var notFromSimResponse = NotReqFromSimulator(Request);
         if (!notFromSimResponse)
@@ -258,6 +255,8 @@ public class ApiController(
             _logger.LogWarning(logMessageUnauthorized, Request.HttpContext.Connection.RemoteIpAddress);
             return Unauthorized();
         }
+
+        _logger.LogInformation("Received follow/unfollow request for {Username} with follow action {FollowAction} and unfollow action {UnfollowAction}", username, followAction.Follow, followAction.Unfollow);
 
         var userId = await GetUserIdAsync(username);
         if (!userId.HasValue)
@@ -276,10 +275,13 @@ public class ApiController(
                 return NotFound($"User '{followAction.Follow}' not found.");
             }
 
-            await followerRepository.Follow(userId.Value, followsUserId.Value);
+            var followed = await followerRepository.Follow(userId.Value, followsUserId.Value);
+            if (!followed)
+            {
+                _logger.LogWarning("User {Username} is already following user {TargetUsername}", username, followAction.Follow);
+            }
 
-            _logger.LogInformation("Follow action: {ActionType}, Initiator: {Username}, Target: {TargetUsername}", "Follow", username, followAction.Follow);
-            return Ok($"Successfully followed user '{followsUserId}'.");
+            return NoContent();
         }
 
         // Unfollow
@@ -294,13 +296,13 @@ public class ApiController(
 
             var unfollowed = await followerRepository.Unfollow(userId.Value, followsUserId.Value);
 
-            if (unfollowed)
+            if (!unfollowed)
             {
-                _logger.LogInformation("Unfollow action: {ActionType}, Initiator: {Username}, Target: {TargetUsername}", "Unfollow", username, followAction.Unfollow);
-                return Ok($"Successfully unfollowed user '{followsUserId}'.");
+                _logger.LogWarning("User {Username} is not following user {TargetUsername}", username, followAction.Unfollow);
             }
+            return NoContent();
         }
-        _logger.LogWarning("Invalid request for user {Username}", username);
+        _logger.LogWarning("Received an invalid request for {Username}. Follow Action: {FollowAction}, Unfollow Action: {UnfollowAction}", username, followAction.Follow, followAction.Unfollow);
         return BadRequest("Invalid request.");
     }
 }
