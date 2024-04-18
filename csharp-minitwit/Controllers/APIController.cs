@@ -124,7 +124,6 @@ public class ApiController(
 
         var filteredMsgs = await messageRepository.GetApiMessagesAsync(messagesToFetch);
 
-        _logger.LogInformation("Successfully retrieved messages");
         return Ok(filteredMsgs);
     }
 
@@ -155,7 +154,6 @@ public class ApiController(
 
             await messageRepository.AddMessageAsync(model.content, userId.Value);
 
-            _logger.LogInformation("Successfully posted a new message for user {Username}", username);
             return NoContent();
         }
         _logger.LogWarning("Content cannot be empty for user {Username}", username);
@@ -236,7 +234,6 @@ public class ApiController(
                 follows = followerNames
             };
 
-            _logger.LogInformation("Successfully retrieved followers for user {Username}", username);
             return Ok(followersResponse);
         }
         catch (Exception ex)
@@ -276,13 +273,12 @@ public class ApiController(
             var followsUserId = await GetUserIdAsync(followAction.Follow);
             if (!followsUserId.HasValue)
             {
-                _logger.LogWarning("User not found: {Username}", followAction.Follow);
+                _logger.LogWarning("Follow target user not found: {TargetUsername}", followAction.Follow);
                 return NotFound($"User '{followAction.Follow}' not found.");
             }
 
             await followerRepository.Follow(userId.Value, followsUserId.Value);
 
-            _logger.LogInformation("Successfully followed user {Username}", followAction.Follow);
             return Ok($"Successfully followed user '{followsUserId}'.");
         }
 
@@ -292,7 +288,7 @@ public class ApiController(
             var followsUserId = await GetUserIdAsync(followAction.Unfollow);
             if (!followsUserId.HasValue)
             {
-                _logger.LogWarning("User not found: {Username}", followAction.Unfollow);
+                _logger.LogWarning("Unfollow target user not found: {TargetUsername}", followAction.Unfollow);
                 return NotFound($"User '{followAction.Unfollow}' not found.");
             }
 
@@ -300,11 +296,10 @@ public class ApiController(
 
             if (unfollowed)
             {
-                _logger.LogInformation("Successfully unfollowed user {Username}", followAction.Unfollow);
                 return Ok($"Successfully unfollowed user '{followsUserId}'.");
             }
         }
-        _logger.LogWarning("Invalid request for user {Username}", username);
+        _logger.LogWarning("Received an invalid request for {Username}. Action: {Action}", username, Newtonsoft.Json.JsonConvert.SerializeObject(followAction));
         return BadRequest("Invalid request.");
     }
 }
