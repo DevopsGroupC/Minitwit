@@ -299,7 +299,6 @@ public class ApiController(
             if (!unfollowed)
             {
                 _logger.LogWarning("User {Username} is not following user {TargetUsername}", username, followAction.Unfollow);
-                return NoContent();
             }
             return NoContent();
         }
