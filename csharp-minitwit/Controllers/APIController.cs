@@ -299,7 +299,7 @@ public class ApiController(
                 return Ok($"Successfully unfollowed user '{followsUserId}'.");
             }
         }
-        _logger.LogWarning("Received an invalid request for {Username}. Action: {Action}", username, Newtonsoft.Json.JsonConvert.SerializeObject(followAction));
+        _logger.LogWarning("Received an invalid request for {Username}. Follow Action: {FollowAction}, Unfollow Action: {UnfollowAction}", username, followAction.Follow, followAction.Unfollow);
         return BadRequest("Invalid request.");
     }
 }
