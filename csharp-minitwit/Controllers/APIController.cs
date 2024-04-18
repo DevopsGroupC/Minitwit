@@ -149,7 +149,7 @@ public class ApiController(
             if (!userId.HasValue)
             {
                 _logger.LogWarning("User not found: {Username}", username);
-                return BadRequest("Invalid username.");
+                return NotFound("User not found.");
             }
 
             await messageRepository.AddMessageAsync(model.content, userId.Value);
@@ -283,11 +283,10 @@ public class ApiController(
             var followed = await followerRepository.Follow(userId.Value, followsUserId.Value);
             if (!followed)
             {
-                _logger.LogWarning("User '{Username}' is already following user '{TargetUsername}'", username, followAction.Follow);
-                return Ok($"User '{followAction.Follow}' is already followed by user '{username}'.");
+                _logger.LogWarning("User {Username} is already following user {TargetUsername}", username, followAction.Follow);
             }
 
-            return Ok($"Successfully followed user '{followsUserId}'.");
+            return NoContent();
         }
 
         // Unfollow
@@ -304,10 +303,10 @@ public class ApiController(
 
             if (!unfollowed)
             {
-                _logger.LogWarning("User '{Username}' is not following user '{TargetUsername}'", username, followAction.Unfollow);
-                return Ok($"User '{followAction.Unfollow}' is not followed by user '{username}'.");
+                _logger.LogWarning("User {Username} is not following user {TargetUsername}", username, followAction.Unfollow);
+                return NoContent();
             }
-            return Ok($"Successfully unfollowed user '{followsUserId}'.");
+            return NoContent();
         }
         _logger.LogWarning("Received an invalid request for {Username}. Follow Action: {FollowAction}, Unfollow Action: {UnfollowAction}", username, followAction.Follow, followAction.Unfollow);
         return BadRequest("Invalid request.");
