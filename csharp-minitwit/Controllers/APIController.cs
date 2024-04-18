@@ -1,14 +1,9 @@
-using System;
-using System.Threading.Tasks;
 
 using csharp_minitwit.Models;
 using csharp_minitwit.Models.DTOs;
 using csharp_minitwit.Services.Interfaces;
 
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
-
-using OpenTelemetry.Trace;
 
 namespace csharp_minitwit.Controllers;
 
@@ -28,6 +23,7 @@ public class ApiController(
     private readonly ILogger<ApiController> _logger = logger;
 
     private readonly string logMessageUnauthorized = "Unauthorized request from {IP}";
+    private readonly string logMessageUserNotFound = "User not found: {Username}";
 
     protected bool NotReqFromSimulator(HttpRequest request)
     {
@@ -148,7 +144,7 @@ public class ApiController(
             var userId = await GetUserIdAsync(username);
             if (!userId.HasValue)
             {
-                _logger.LogWarning("User not found: {Username}", username);
+                _logger.LogWarning(logMessageUserNotFound, username);
                 return NotFound("User not found.");
             }
 
@@ -181,7 +177,7 @@ public class ApiController(
             var userId = await GetUserIdAsync(username);
             if (!userId.HasValue)
             {
-                _logger.LogWarning("User not found: {Username}", username);
+                _logger.LogWarning(logMessageUserNotFound, username);
                 return NotFound("User not found.");
             }
 
@@ -221,7 +217,7 @@ public class ApiController(
             var userId = await GetUserIdAsync(username);
             if (!userId.HasValue)
             {
-                _logger.LogWarning("User not found: {Username}", username);
+                _logger.LogWarning(logMessageUserNotFound, username);
                 return NotFound("User not found.");
             }
 
@@ -266,7 +262,7 @@ public class ApiController(
         var userId = await GetUserIdAsync(username);
         if (!userId.HasValue)
         {
-            _logger.LogWarning("User not found: {Username}", username);
+            _logger.LogWarning(logMessageUserNotFound, username);
             return NotFound("User not found.");
         }
 
