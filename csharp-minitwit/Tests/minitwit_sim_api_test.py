@@ -17,20 +17,6 @@ HEADERS = {'Connection': 'close',
            'Content-Type': 'application/json',
            f'Authorization': f'Basic {ENCODED_CREDENTIALS}'}
 
-
-# def init_db():
-#     """Creates the database tables."""
-#     with closing(sqlite3.connect(DATABASE)) as db:
-#         with open("schema.sql") as fp:
-#             db.cursor().executescript(fp.read())
-#         db.commit()
-
-
-# # Empty the database and initialize the schema again
-# Path(DATABASE).unlink()
-# init_db()
-
-
 def test_latest():
     # post something to updaet LATEST
     url = f"{BASE_URL}/register"
@@ -124,7 +110,6 @@ def test_register_b():
     response = requests.post(f'{BASE_URL}/register', data=json.dumps(data),
                              headers=HEADERS, params=params)
     assert response.ok
-    # TODO: add another assertion that it is really there
 
     # verify that latest was updated
     response = requests.get(f'{BASE_URL}/latest', headers=HEADERS)

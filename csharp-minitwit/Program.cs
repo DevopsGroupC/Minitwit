@@ -1,15 +1,27 @@
 using System.Reflection;
-using Microsoft.OpenApi.Models;
+
 using csharp_minitwit;
 using csharp_minitwit.Middlewares;
 using csharp_minitwit.Services.Interfaces;
-using Microsoft.EntityFrameworkCore;
 using csharp_minitwit.Services.Repositories;
+
+using Microsoft.EntityFrameworkCore;
+using Microsoft.OpenApi.Models;
+
 using Prometheus;
-using csharp_minitwit.Middlewares;
+
+using Serilog;
+using Serilog.Events;
+using Serilog.Sinks.Loki;
 
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Initialize Serilog from appsettings.json configuration
+builder.Host.UseSerilog((context, services, configuration) => configuration
+    .ReadFrom.Configuration(context.Configuration)
+    .ReadFrom.Services(services)
+    .Enrich.FromLogContext());
 
 // Dependency injection
 builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
@@ -47,7 +59,7 @@ else
 builder.Services.AddScoped<IMessageRepository, MessageRepository>();
 builder.Services.AddScoped<IFollowerRepository, FollowerRepository>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
-
+builder.Services.AddScoped<IMetaDataRepository, MetaDataRepository>();
 
 builder.Services.AddControllersWithViews();
 builder.Services.AddControllers();
@@ -69,6 +81,9 @@ using (var scope = app.Services.CreateScope())
     var dbContext = scope.ServiceProvider.GetRequiredService<MinitwitContext>();
     dbContext.Database.Migrate();
 }
+
+// Log statement to indicate the application is starting
+Log.Information("Starting csharp-minitwit");
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment() || !app.Environment.IsStaging())

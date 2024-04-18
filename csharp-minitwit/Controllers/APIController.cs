@@ -1,37 +1,42 @@
+using System;
+using System.Threading.Tasks;
+
 using csharp_minitwit.Models;
 using csharp_minitwit.Models.DTOs;
 using csharp_minitwit.Services.Interfaces;
-using csharp_minitwit.Utils;
 
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Query;
+using Microsoft.Extensions.Logging;
+
+using OpenTelemetry.Trace;
 
 namespace csharp_minitwit.Controllers;
 
-
 [Route("api")]
 [ApiController]
+
 public class ApiController(
     IMessageRepository messageRepository,
     IFollowerRepository followerRepository,
     IUserRepository userRepository,
-    IConfiguration configuration)
+    IMetaDataRepository metaDataRepository,
+    IConfiguration configuration,
+    ILogger<ApiController> logger)
     : ControllerBase
 {
-    private readonly string _perPage = configuration.GetValue<string>("Constants:PerPage")!;
+    private readonly int _perPage = configuration.GetValue<int>("Constants:PerPage");
+    private readonly ILogger<ApiController> _logger = logger;
+
+    private readonly string logMessageUnauthorized = "Unauthorized request from {IP}";
 
     protected bool NotReqFromSimulator(HttpRequest request)
     {
-        if (request.Headers.TryGetValue("Authorization", out var fromSimulator))
+        var isAuthorized = request.Headers.TryGetValue("Authorization", out var fromSimulator) && fromSimulator.ToString() == "Basic c2ltdWxhdG9yOnN1cGVyX3NhZmUh";
+        if (!isAuthorized)
         {
-            if (fromSimulator.ToString() == "Basic c2ltdWxhdG9yOnN1cGVyX3NhZmUh")
-            {
-                return true;
-            }
+            _logger.LogWarning(logMessageUnauthorized, request.HttpContext.Connection.RemoteIpAddress);
         }
-        return false;
+        return isAuthorized;
     }
 
     protected async Task<int?> GetUserIdAsync(string username)
@@ -40,33 +45,25 @@ public class ApiController(
     }
 
     [HttpGet("latest")]
-    public IActionResult GetLatest()
+    public async Task<IActionResult> GetLatest()
     {
-        int latestProcessedCommandID;
-        try
-        {
-            var latest = System.IO.File.ReadAllText("Services/latest_processed_sim_action_id.txt");
-            latestProcessedCommandID = int.Parse(latest);
-        }
-        catch (Exception)
-        {
-            latestProcessedCommandID = -1;
-        }
-        return Ok(new { latest = latestProcessedCommandID });
+        var latest = await metaDataRepository.GetLatestAsync();
+        return Ok(new { latest });
     }
 
-    protected void UpdateLatest(int? latest)
+    protected async Task UpdateLatest(int? latest)
     {
-
-        System.IO.File.WriteAllText("Services/latest_processed_sim_action_id.txt", latest.ToString());
-
+        if (latest.HasValue)
+        {
+            await metaDataRepository.SetLatestAsync(latest.Value);
+        }
     }
 
     [HttpPost("register")]
     public async Task<IActionResult> Register([FromBody] APIRegisterModel model, int? latest)
     {
-
-        UpdateLatest(latest);
+        _logger.LogInformation("Registering a new user: {Username}", model.username);
+        await UpdateLatest(latest);
 
         if (ModelState.IsValid)
         {
@@ -88,15 +85,23 @@ public class ApiController(
             {
                 ModelState.AddModelError("Username", "The username is already taken");
             }
-            else if (await userRepository.InsertUser(model.username, model.email, model.pwd))
-            {
-                return NoContent();
-            }
             else
             {
-                return StatusCode(StatusCodes.Status500InternalServerError);
+                var result = await userRepository.InsertUser(model.username, model.email, model.pwd);
+                if (result)
+                {
+                    _logger.LogInformation("Successfully registered a new user: {Username}", model.username);
+                    return NoContent();
+                }
+                else
+                {
+                    _logger.LogError("Failed to register a new user: {Username}", model.username);
+                    return StatusCode(StatusCodes.Status500InternalServerError);
+                }
             }
         }
+        var modelErrors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage);
+        _logger.LogWarning("User registration failed for {Username}. Errors: {ModelErrors}", model.username, string.Join(", ", modelErrors));
         return BadRequest(ModelState);
     }
 
@@ -105,124 +110,163 @@ public class ApiController(
     {
         if (latest != null)
         {
-            UpdateLatest(latest);
+            await UpdateLatest(latest);
         }
 
         // Check if request is from simulator
         var notFromSimResponse = NotReqFromSimulator(Request);
         if (!notFromSimResponse)
+        {
+            _logger.LogWarning(logMessageUnauthorized, Request.HttpContext.Connection.RemoteIpAddress);
             return Unauthorized();
-
-        int messagesToFetch = no > 0 ? no : int.Parse(_perPage);
+        }
+        int messagesToFetch = no > 0 ? no : _perPage;
 
         var filteredMsgs = await messageRepository.GetApiMessagesAsync(messagesToFetch);
 
+        _logger.LogInformation("Successfully retrieved messages");
         return Ok(filteredMsgs);
     }
 
     [HttpPost("msgs/{username}")]
     public async Task<IActionResult> PostMessagesPerUser(string username, [FromBody] APIMessageModel model, int? latest)
     {
+        _logger.LogInformation("Posting a new message for user {Username}", username);
         if (latest != null)
         {
-            UpdateLatest(latest);
+            await UpdateLatest(latest);
         }
 
         // Check if request is from simulator
         var notFromSimResponse = NotReqFromSimulator(Request);
         if (!notFromSimResponse)
+        {
+            _logger.LogWarning(logMessageUnauthorized, Request.HttpContext.Connection.RemoteIpAddress);
             return Unauthorized();
-
+        }
         if (!string.IsNullOrEmpty(model.content))
         {
             var userId = await GetUserIdAsync(username);
             if (!userId.HasValue)
             {
+                _logger.LogWarning("User not found: {Username}", username);
                 return BadRequest("Invalid username.");
             }
 
             await messageRepository.AddMessageAsync(model.content, userId.Value);
 
+            _logger.LogInformation("Successfully posted a new message for user {Username}", username);
             return NoContent();
         }
-
+        _logger.LogWarning("Content cannot be empty for user {Username}", username);
         return BadRequest("Content cannot be empty.");
     }
 
     [HttpGet("msgs/{username}")]
     public async Task<IActionResult> GetMessagesPerUser(string username, int no, int? latest)
     {
-        if (latest != null)
+        _logger.LogInformation("Retrieving messages for user {Username}", username);
+        try
         {
-            UpdateLatest(latest);
+            if (latest != null)
+            {
+                await UpdateLatest(latest);
+            }
+
+            // Check if request is from simulator
+            var notFromSimResponse = NotReqFromSimulator(Request);
+            if (!notFromSimResponse)
+            {
+                _logger.LogWarning(logMessageUnauthorized, Request.HttpContext.Connection.RemoteIpAddress);
+                return Unauthorized();
+            }
+            var userId = await GetUserIdAsync(username);
+            if (!userId.HasValue)
+            {
+                _logger.LogWarning("User not found: {Username}", username);
+                return NotFound("User not found.");
+            }
+
+            int messagesToFetch = no > 0 ? no : _perPage;
+
+            var messages = await messageRepository.GetApiMessagesByAuthorAsync(messagesToFetch, userId.Value);
+
+            _logger.LogInformation("Successfully retrieved messages for user {Username}", username);
+            return Ok(messages);
         }
-
-        // Check if request is from simulator
-        var notFromSimResponse = NotReqFromSimulator(Request);
-        if (!notFromSimResponse)
-            return Unauthorized();
-
-        var userId = await GetUserIdAsync(username);
-        if (!userId.HasValue)
+        catch (Exception ex)
         {
-            return NotFound("User not found.");
+            _logger.LogError(ex, "Failed to retrieve messages for user {Username}", username);
+            return StatusCode(StatusCodes.Status500InternalServerError, "Failed to retrieve messages");
         }
-
-        int messagesToFetch = no > 0 ? no : int.Parse(_perPage);
-
-        var messages = await messageRepository.GetApiMessagesByAuthorAsync(messagesToFetch, userId.Value);
-
-        return Ok(messages);
     }
 
 
     [HttpGet("fllws/{username}")]
     public async Task<IActionResult> GetUserFollowers(string username, int no, int? latest)
     {
-        if (latest != null)
+        _logger.LogInformation("Retrieving followers for user {Username}", username);
+        try
         {
-            UpdateLatest(latest);
+            if (latest != null)
+            {
+                await UpdateLatest(latest);
+            }
+
+            // Check if request is from simulator
+            var notFromSimResponse = NotReqFromSimulator(Request);
+            if (!notFromSimResponse)
+            {
+                _logger.LogWarning(logMessageUnauthorized, Request.HttpContext.Connection.RemoteIpAddress);
+                return Unauthorized();
+            }
+            var userId = await GetUserIdAsync(username);
+            if (!userId.HasValue)
+            {
+                _logger.LogWarning("User not found: {Username}", username);
+                return NotFound("User not found.");
+            }
+
+            int messagesToFetch = no > 0 ? no : _perPage;
+
+            var followerNames = await followerRepository.GetFollowingNames(messagesToFetch, userId.Value);
+
+            var followersResponse = new
+            {
+                follows = followerNames
+            };
+
+            _logger.LogInformation("Successfully retrieved followers for user {Username}", username);
+            return Ok(followersResponse);
         }
-
-        // Check if request is from simulator
-        var notFromSimResponse = NotReqFromSimulator(Request);
-        if (!notFromSimResponse)
-            return Unauthorized();
-
-        var userId = await GetUserIdAsync(username);
-        if (!userId.HasValue)
+        catch (Exception ex)
         {
-            return NotFound("User not found.");
+            _logger.LogError(ex, "Failed to retrieve followers for user {Username}", username);
+            return StatusCode(StatusCodes.Status500InternalServerError, "Failed to retrieve followers");
         }
-
-        int messagesToFetch = no > 0 ? no : int.Parse(_perPage);
-
-        var followerNames = await followerRepository.GetFollowingNames(messagesToFetch, userId.Value);
-
-        var followersResponse = new
-        {
-            follows = followerNames
-        };
-
-        return Ok(followersResponse);
     }
 
     [HttpPost("fllws/{username}")]
     public async Task<IActionResult> FollowUser(string username, [FromBody] FollowActionDto followAction, int? latest)
     {
+
         if (latest != null)
         {
-            UpdateLatest(latest);
+            await UpdateLatest(latest);
         }
 
         // Check if request is from simulator
         var notFromSimResponse = NotReqFromSimulator(Request);
         if (!notFromSimResponse)
+        {
+            _logger.LogWarning(logMessageUnauthorized, Request.HttpContext.Connection.RemoteIpAddress);
             return Unauthorized();
+        }
 
         var userId = await GetUserIdAsync(username);
         if (!userId.HasValue)
         {
+            _logger.LogWarning("User not found: {Username}", username);
             return NotFound("User not found.");
         }
 
@@ -232,11 +276,13 @@ public class ApiController(
             var followsUserId = await GetUserIdAsync(followAction.Follow);
             if (!followsUserId.HasValue)
             {
+                _logger.LogWarning("User not found: {Username}", followAction.Follow);
                 return NotFound($"User '{followAction.Follow}' not found.");
             }
 
             await followerRepository.Follow(userId.Value, followsUserId.Value);
 
+            _logger.LogInformation("Successfully followed user {Username}", followAction.Follow);
             return Ok($"Successfully followed user '{followsUserId}'.");
         }
 
@@ -246,6 +292,7 @@ public class ApiController(
             var followsUserId = await GetUserIdAsync(followAction.Unfollow);
             if (!followsUserId.HasValue)
             {
+                _logger.LogWarning("User not found: {Username}", followAction.Unfollow);
                 return NotFound($"User '{followAction.Unfollow}' not found.");
             }
 
@@ -253,9 +300,11 @@ public class ApiController(
 
             if (unfollowed)
             {
+                _logger.LogInformation("Successfully unfollowed user {Username}", followAction.Unfollow);
                 return Ok($"Successfully unfollowed user '{followsUserId}'.");
             }
         }
+        _logger.LogWarning("Invalid request for user {Username}", username);
         return BadRequest("Invalid request.");
     }
 }

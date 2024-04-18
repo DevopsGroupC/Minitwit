@@ -14,9 +14,6 @@ namespace csharp_minitwit.Utils
                 case "login":
                 case "logout":
                 case "add_message":
-                case "follow":
-                case "unfollow":
-
                     return normalizedPath;
                 default:
                     return "other"; // Generalize other paths to reduce cardinality

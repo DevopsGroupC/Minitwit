@@ -1,5 +1,7 @@
 using Prometheus;
 
+namespace csharp_minitwit;
+
 public static class ApplicationMetrics
 {
     public static readonly Histogram HttpRequestDuration = Metrics

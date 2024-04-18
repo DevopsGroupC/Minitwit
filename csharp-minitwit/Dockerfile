@@ -6,9 +6,8 @@ WORKDIR /app
 
 COPY . .
 
-RUN dotnet restore
-
-RUN dotnet publish -c Release -o out
+RUN dotnet restore && \
+    dotnet publish -c Release -o out
 
 FROM mcr.microsoft.com/dotnet/aspnet:8.0
 WORKDIR /app
@@ -17,7 +16,7 @@ WORKDIR /app
 ARG ENVIRONMENT
 ENV ASPNETCORE_ENVIRONMENT=${ENVIRONMENT}
 
-COPY --from=build /app/out .
+COPY --from=build /app/out . 
 COPY ./Databases/schema.sql ./schema.sql
 COPY ./Databases/volume/minitwit.db ./Databases/volume/minitwit.db
 COPY ./Services/latest_processed_sim_action_id.txt ./Services/latest_processed_sim_action_id.txt

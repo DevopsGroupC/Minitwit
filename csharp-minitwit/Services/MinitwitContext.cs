@@ -1,5 +1,8 @@
+
 using System;
 using System.Collections.Generic;
+
+using csharp_minitwit.Models.Entities;
 
 using Microsoft.EntityFrameworkCore;
 
@@ -7,7 +10,11 @@ namespace csharp_minitwit;
 
 public partial class MinitwitContext : DbContext
 {
-    private readonly string _connectionString;
+#pragma warning disable CS0649 
+#pragma warning disable S3459 // Unassigned members should be removed
+    private readonly string? _connectionString;
+#pragma warning restore S3459 // Unassigned members should be removed
+#pragma warning restore CS0649
 
     public MinitwitContext() { }
 
@@ -21,6 +28,9 @@ public partial class MinitwitContext : DbContext
     public virtual DbSet<Message> Messages { get; set; }
 
     public virtual DbSet<User> Users { get; set; }
+
+    public virtual DbSet<MetaData> MetaData { get; set; }
+
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
@@ -91,9 +101,11 @@ public partial class MinitwitContext : DbContext
             entity.HasIndex(e => e.Username);
         });
 
-        OnModelCreatingPartial(modelBuilder);
+        modelBuilder.Entity<MetaData>(entity =>
+        {
+            entity.ToTable("metadata");
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.Latest);
+        });
     }
-
-
-    partial void OnModelCreatingPartial(ModelBuilder modelBuilder);
 }
