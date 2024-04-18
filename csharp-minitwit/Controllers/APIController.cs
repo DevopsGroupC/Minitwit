@@ -252,6 +252,7 @@ public class ApiController(
             await UpdateLatest(latest);
         }
 
+
         // Check if request is from simulator
         var notFromSimResponse = NotReqFromSimulator(Request);
         if (!notFromSimResponse)
@@ -259,6 +260,8 @@ public class ApiController(
             _logger.LogWarning(logMessageUnauthorized, Request.HttpContext.Connection.RemoteIpAddress);
             return Unauthorized();
         }
+
+        _logger.LogInformation("Received follow/unfollow request for {Username} with follow action {FollowAction} and unfollow action {UnfollowAction}", username, followAction.Follow, followAction.Unfollow);
 
         var userId = await GetUserIdAsync(username);
         if (!userId.HasValue)
@@ -277,7 +280,12 @@ public class ApiController(
                 return NotFound($"User '{followAction.Follow}' not found.");
             }
 
-            await followerRepository.Follow(userId.Value, followsUserId.Value);
+            var followed = await followerRepository.Follow(userId.Value, followsUserId.Value);
+            if (!followed)
+            {
+                _logger.LogWarning("User '{Username}' is already following user '{TargetUsername}'", username, followAction.Follow);
+                return Ok($"User '{followAction.Follow}' is already followed by user '{username}'.");
+            }
 
             return Ok($"Successfully followed user '{followsUserId}'.");
         }
@@ -294,10 +302,12 @@ public class ApiController(
 
             var unfollowed = await followerRepository.Unfollow(userId.Value, followsUserId.Value);
 
-            if (unfollowed)
+            if (!unfollowed)
             {
-                return Ok($"Successfully unfollowed user '{followsUserId}'.");
+                _logger.LogWarning("User '{Username}' is not following user '{TargetUsername}'", username, followAction.Unfollow);
+                return Ok($"User '{followAction.Unfollow}' is not followed by user '{username}'.");
             }
+            return Ok($"Successfully unfollowed user '{followsUserId}'.");
         }
         _logger.LogWarning("Received an invalid request for {Username}. Follow Action: {FollowAction}, Unfollow Action: {UnfollowAction}", username, followAction.Follow, followAction.Unfollow);
         return BadRequest("Invalid request.");
