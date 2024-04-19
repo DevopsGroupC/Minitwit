@@ -1,50 +1,28 @@
-version: "3.8"
+version: "3.3"
 
 networks:
   main:
 
 services:
   minitwitimage:
-    image: aswr/csharptwit-preproduction
+    image: ${DOCKER_USERNAME}/csharptwit-preproduction
+    container_name: csharp-preproduction-minitwit
     networks:
       - main
     ports:
-      - target: 8080
-        published: 5000
-        protocol: tcp
-        # mode: host
+      - "5000:8080"
     environment:
       - ConnectionStrings__DefaultConnection=${ConnectionStrings__DefaultConnection}
-    deploy:
-      replicas: 2
-      update_config:
-        parallelism: 1
-        delay: 10s
-        order: start-first
-      restart_policy:
-        condition: on-failure
 
   prometheus:
     image: prom/prometheus
+    container_name: prometheus
     volumes:
-      - type: bind
-        source: ./prometheus.yml
-        target: /etc/prometheus/prometheus.yml
-        read_only: true
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
     ports:
-      - target: 9090
-        published: 9090
-        protocol: tcp
-        # mode: host
+      - "9090:9090"
     networks:
       - main
-    deploy:
-      replicas: 1
-      update_config:
-        parallelism: 1
-        delay: 10s
-      restart_policy:
-        condition: on-failure
     # This extra host is the one being scrapped by Prometheus
     # It is required so the scrapping endpoint is mapped to the name of the app's Docker image name and not to the containers changing ID
     extra_hosts:
