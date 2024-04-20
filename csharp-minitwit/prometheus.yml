@@ -23,7 +23,21 @@ scrape_configs:
     static_configs:
       - targets: ["localhost:9090"]
 
-  - job_name: 'csharp-minitwit'
-    scrape_interval: 5s
-    static_configs:
-      - targets: ["csharp-minitwit:5000"]  ## Port being scrapped, it is to "csharp-minitwit:host-gateway" extra host inside the corresponding docker-compose
+  # Create a job for Docker Swarm containers.
+  - job_name: "dockerswarm"
+    dockerswarm_sd_configs:
+      - host: unix:///var/run/docker.sock
+        role: tasks
+    relabel_configs:
+      # Fetch metrics on port 9323.
+      - source_labels: [__meta_dockerswarm_node_address]
+        target_label: __address__
+        replacement: $1:9323
+      # Set hostname as instance label
+      - source_labels: [__meta_dockerswarm_node_hostname]
+        target_label: instance
+
+  # - job_name: 'csharp-minitwit'
+  #   scrape_interval: 5s
+  #   static_configs:
+  #     - targets: ["csharp-minitwit:5000"]  ## Port being scrapped, it is to "csharp-minitwit:host-gateway" extra host inside the corresponding docker-compose
