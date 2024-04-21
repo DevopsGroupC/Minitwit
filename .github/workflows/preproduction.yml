@@ -59,7 +59,7 @@ jobs:
           echo "$SSH_KEY" > ~/.ssh/staging_key
           chmod 600 ~/.ssh/staging_key
         env:
-          SSH_KEY: ${{ secrets.SSH_KEY_PRE }}
+          SSH_KEY: ${{ secrets.SSH_KEY_PRE_SWARM }}
 
       - name: Copy files to server
         # Updating all files on remote server from the remote_files_preproduction
@@ -68,7 +68,7 @@ jobs:
           ./csharp-minitwit/remote_files_preproduction/* $SSH_USER@$SSH_HOST:/csharp-minitwit
         env:
           SSH_USER: ${{ secrets.SSH_USER }}
-          SSH_HOST: ${{ secrets.SSH_HOST_PRE }}
+          SSH_HOST: ${{ secrets.SSH_HOST_PRE_MANAGER }}
 
       - name: Deploy to server
         # Calls deploy.sh to pull csharp-minitwit image from Docker Hub and spin container up.
@@ -85,4 +85,4 @@ jobs:
           EOF
         env:
           SSH_USER: ${{ secrets.SSH_USER }}
-          SSH_HOST: ${{ secrets.SSH_HOST_PRE }}
+          SSH_HOST: ${{ secrets.SSH_HOST_PRE_MANAGER }}
