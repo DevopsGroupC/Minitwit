@@ -79,7 +79,6 @@ jobs:
             printenv
             docker compose -f docker-stack.yml pull
 
-        # Deploy the stack
             echo "Deploying stack 'minitwit'..."
             docker stack deploy --compose-file docker-stack.yml minitwit
 
