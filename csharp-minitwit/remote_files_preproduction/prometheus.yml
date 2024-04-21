@@ -40,6 +40,6 @@ scrape_configs:
   - job_name: "csharp-minitwit"
     scrape_interval: 5s
     static_configs:
-      - targets: ["csharp-preproduction-minitwit:8080"] ## Port being scrapped, it is to "csharp-minitwit:host-gateway" extra host inside the corresponding docker-compose
+      - targets: ["app:8080"] ## Port being scrapped, it is to "csharp-minitwit:host-gateway" extra host inside the corresponding docker-compose
         labels:
           group: "csharp-apps"
