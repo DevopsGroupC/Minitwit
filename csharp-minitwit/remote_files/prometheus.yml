@@ -15,15 +15,15 @@ rule_files:
   # - "second_rules.yml"
 
 scrape_configs:
-  - job_name: "prometheus"
+  # - job_name: "prometheus"
 
-    # metrics_path defaults to '/metrics'
-    # scheme defaults to 'http'.
+  #   # metrics_path defaults to '/metrics'
+  #   # scheme defaults to 'http'.
 
-    static_configs:
-      - targets: ["localhost:9090"]
+  #   static_configs:
+  #     - targets: ["localhost:9090"]
 
-  - job_name: 'csharp-minitwit'
+  - job_name: "csharp-minitwit"
     scrape_interval: 5s
     static_configs:
-      - targets: ["csharp-minitwit:5000"]  ## Port being scrapped, it is to "csharp-minitwit:host-gateway" extra host inside the corresponding docker-compose
+      - targets: ["csharp-minitwit:5000"] ## Port being scrapped, it is to "csharp-minitwit:host-gateway" extra host inside the corresponding docker-compose

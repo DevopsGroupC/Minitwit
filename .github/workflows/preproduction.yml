@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - develop
+      - feat/swarmv2
   workflow_dispatch:
 
 # The following secrets are required from the repository's settings:
@@ -76,8 +77,12 @@ jobs:
             export ConnectionStrings__DefaultConnection=${{ secrets.DB_CONNECTIONSTRING_STAGING }}
             cd /csharp-minitwit
             printenv
-            docker compose -f docker-compose.yml pull
-            docker compose -f docker-compose.yml up -d
+            docker compose -f docker-stack.yml pull
+
+        # Deploy the stack
+            echo "Deploying stack 'minitwit'..."
+            docker stack deploy --compose-file docker-stack.yml minitwit
+
           EOF
         env:
           SSH_USER: ${{ secrets.SSH_USER }}
