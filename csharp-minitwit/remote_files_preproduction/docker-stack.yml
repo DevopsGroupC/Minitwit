@@ -4,9 +4,8 @@ networks:
   main:
 
 services:
-  csharp-preproduction-minitwit:
+  app-pre:
     image: ${DOCKER_USERNAME}/csharptwit-preproduction
-    container_name: csharp-preproduction-minitwit
     networks:
       - main
     ports:
@@ -14,7 +13,7 @@ services:
     environment:
       - ConnectionStrings__DefaultConnection=${ConnectionStrings__DefaultConnection}
     deploy:
-      replicas: 3
+      replicas: 2
       update_config:
         parallelism: 1
         delay: 10s
