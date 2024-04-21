@@ -4,7 +4,7 @@ networks:
   main:
 
 services:
-  minitwit-pre:
+  app:
     image: ${DOCKER_USERNAME}/csharptwit-preproduction
     networks:
       - main

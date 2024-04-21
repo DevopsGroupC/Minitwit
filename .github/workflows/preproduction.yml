@@ -80,7 +80,7 @@ jobs:
             docker compose -f docker-stack.yml pull
 
             echo "Deploying stack 'minitwit'..."
-            docker stack deploy --compose-file docker-stack.yml
+            docker stack deploy --compose-file docker-stack.yml minitwit
 
           EOF
         env:
