@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - develop
+      - fix/terraform
   workflow_dispatch:
 
 # The following secrets are required from the repository's settings:

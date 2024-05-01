@@ -43,11 +43,16 @@ terraform apply -auto-approve
 # deploy the stack to the cluster
 echo -e "\n--> Deploying the Csharp-Minitwit stack to the cluster\n"
 
+command="export STAGE=$STAGE && export DOCKER_USERNAME=$DOCKER_USERNAME && docker stack deploy minitwit -c minitwit_stack.yml"
+echo "$command"
+
+# exporting="export STAGE=$STAGE && export DOCKER_USERNAME=$DOCKER_USERNAME"
+
 ssh \
     -o 'StrictHostKeyChecking no' \
     root@$(terraform output -raw minitwit-swarm-leader-ip-address) \
     -i ssh_key/terraform \
-    'docker stack deploy minitwit -c minitwit_stack.yml'
+    "$command"
 
 echo -e "\n--> Done bootstrapping Minitwit"
 echo -e "--> The dbs will need a moment to initialize, this can take up to a couple of minutes..."
