@@ -10,6 +10,7 @@ variable "region" {}
 variable "pub_key" {}
 variable "pvt_key" {}
 
+# export TF_VAR_existing_ip=xxx
 variable "existing_ip" {}
 
 # setup the provider

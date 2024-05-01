@@ -33,6 +33,11 @@ resource "digitalocean_droplet" "minitwit-swarm-leader" {
     destination = "/root/minitwit_stack.yml"
   }
 
+  provisioner "file" {
+    source = "stack/prometheus.yml"
+    destination = "/root/prometheus.yml"
+  }
+
   provisioner "remote-exec" {
     inline = [
       # allow ports for docker swarm

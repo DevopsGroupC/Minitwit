@@ -43,7 +43,7 @@ terraform apply -auto-approve
 # deploy the stack to the cluster
 echo -e "\n--> Deploying the Csharp-Minitwit stack to the cluster\n"
 
-command="export STAGE=$STAGE && export DOCKER_USERNAME=$DOCKER_USERNAME && docker stack deploy minitwit -c minitwit_stack.yml"
+command="export STAGE=$STAGE && export DOCKER_USERNAME=$DOCKER_USERNAME && export ConnectionStrings__DefaultConnection='$ConnectionStrings__DefaultConnection' && docker stack deploy minitwit -c minitwit_stack.yml"
 echo "$command"
 
 # exporting="export STAGE=$STAGE && export DOCKER_USERNAME=$DOCKER_USERNAME"
