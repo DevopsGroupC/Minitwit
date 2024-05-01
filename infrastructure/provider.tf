@@ -10,6 +10,8 @@ variable "region" {}
 variable "pub_key" {}
 variable "pvt_key" {}
 
+variable "existing_ip" {}
+
 # setup the provider
 terraform {
         required_providers {

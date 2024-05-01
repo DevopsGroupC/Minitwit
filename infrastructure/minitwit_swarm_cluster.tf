@@ -1,3 +1,8 @@
+# add the ssh key
+resource "digitalocean_ssh_key" "minitwit" {
+  name = "minitwit"
+  public_key = file(var.pub_key)
+}
 
 #  _                _
 # | | ___  __ _  __| | ___ _ __
@@ -39,20 +44,38 @@ resource "digitalocean_droplet" "minitwit-swarm-leader" {
       "ufw allow 443",
       "ufw allow 5000",
       "ufw allow 9090",
+      # SSH
+      "ufw allow 22",
 
       # initialize docker swarm cluster
       "docker swarm init --advertise-addr ${self.ipv4_address}"
     ]
   }
+}
+
+resource "null_resource" "swarm-init-folder" {
+  depends_on = [digitalocean_droplet.minitwit-swarm-leader]
 
   # save the worker join token
   provisioner "local-exec" {
-    command = "ssh -o 'ConnectionAttempts 3600' -o 'StrictHostKeyChecking no' root@${self.ipv4_address} -i ssh_key/terraform 'docker swarm join-token worker -q' > temp/worker_token"
+    command = "ssh -o 'ConnectionAttempts 3600' -o 'StrictHostKeyChecking no' root@${digitalocean_droplet.minitwit-swarm-leader.ipv4_address} -i ssh_key/terraform 'mkdir -p temp"
   }
+}
 
+resource "null_resource" "swarm-worker-token" {
+  depends_on = [null_resource.swarm-init-folder]
+
+  # save the worker join token
+  provisioner "local-exec" {
+    command = "ssh -o 'ConnectionAttempts 3600' -o 'StrictHostKeyChecking no' root@${digitalocean_droplet.minitwit-swarm-leader.ipv4_address} -i ssh_key/terraform 'docker swarm join-token worker -q' > temp/worker_token"
+  }
+}
+
+resource "null_resource" "swarm-manager-token" {
+  depends_on = [null_resource.swarm-init-folder]
   # save the manager join token
   provisioner "local-exec" {
-    command = "ssh -o 'ConnectionAttempts 3600' -o 'StrictHostKeyChecking no' root@${self.ipv4_address} -i ssh_key/terraform 'docker swarm join-token manager -q' > temp/manager_token"
+    command = "ssh -o 'ConnectionAttempts 3600' -o 'StrictHostKeyChecking no' root@${digitalocean_droplet.minitwit-swarm-leader.ipv4_address} -i ssh_key/terraform 'docker swarm join-token manager -q' > temp/manager_token"
   }
 }
 
@@ -66,7 +89,7 @@ resource "digitalocean_droplet" "minitwit-swarm-leader" {
 # create cloud vm
 resource "digitalocean_droplet" "minitwit-swarm-manager" {
   # create managers after the leader
-  depends_on = [digitalocean_droplet.minitwit-swarm-leader]
+  depends_on = [null_resource.swarm-manager-token]
 
   # number of vms to create
   count = 1
@@ -103,6 +126,8 @@ resource "digitalocean_droplet" "minitwit-swarm-manager" {
       "ufw allow 443",
       "ufw allow 5000",
       "ufw allow 9090",
+      # SSH
+      "ufw allow 22",
 
       # join swarm cluster as managers
       "docker swarm join --token $(cat manager_token) ${digitalocean_droplet.minitwit-swarm-leader.ipv4_address}"
@@ -120,7 +145,7 @@ resource "digitalocean_droplet" "minitwit-swarm-manager" {
 # create cloud vm
 resource "digitalocean_droplet" "minitwit-swarm-worker" {
   # create workers after the leader
-  depends_on = [digitalocean_droplet.minitwit-swarm-leader]
+  depends_on = [null_resource.swarm-worker-token]
 
   # number of vms to create
   count = 2
@@ -157,6 +182,8 @@ resource "digitalocean_droplet" "minitwit-swarm-worker" {
       "ufw allow 443",
       "ufw allow 5000",
       "ufw allow 9090",
+      # SSH
+      "ufw allow 22",
 
       # join swarm cluster as workers
       "docker swarm join --token $(cat worker_token) ${digitalocean_droplet.minitwit-swarm-leader.ipv4_address}"
