@@ -632,3 +632,4 @@ csharp-minitwit/Databases/minitwit.db
 infrastructure/secrets
 infrastructure/ssh_key/*
 infrastructure/.terraform/*
+infrastructure/temp/*
