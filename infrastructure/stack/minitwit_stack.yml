@@ -14,7 +14,7 @@ services:
     environment:
       - ConnectionStrings__DefaultConnection=${ConnectionStrings__DefaultConnection}
     deploy:
-      replicas: 4
+      replicas: 2
       update_config:
         parallelism: 1
         delay: 10s
@@ -27,7 +27,7 @@ services:
   grafana:
     image: grafana/grafana-enterprise
     volumes:
-      - /data/grafana:/var/lib/grafana #fix this
+      - /mnt/minitwit-data:/var/lib/grafana #fix this
     deploy:
       replicas: 1
       update_config:
@@ -40,7 +40,7 @@ services:
           - node.role == manager
           # - node.labels.grafana == true
 
-  loki:
+  # loki:
   #fill this
 
 
