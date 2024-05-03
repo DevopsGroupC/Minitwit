@@ -33,7 +33,7 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v1
 
-      - name: Build and push csharptwit-preproduction
+      - name: Build and push csharptwit-staging
         uses: docker/build-push-action@v2
         with:
           context: ./csharp-minitwit
@@ -42,7 +42,7 @@ jobs:
           tags: ${{ secrets.DOCKER_USERNAME }}/csharptwit-staging:latest
           cache-from: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/csharptwit-staging:webbuildcache
           cache-to: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/csharptwit-staging:webbuildcache,mode=max
-          build-args: ENVIRONMENT=Preproduction
+          build-args: ENVIRONMENT=Staging
 
       #TODO: Add / adjust tests from py api maybe?
 

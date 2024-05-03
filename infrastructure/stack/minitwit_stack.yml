@@ -14,13 +14,35 @@ services:
     environment:
       - ConnectionStrings__DefaultConnection=${ConnectionStrings__DefaultConnection}
     deploy:
-      replicas: 2
+      replicas: 4
       update_config:
         parallelism: 1
         delay: 10s
         order: start-first
       restart_policy:
         condition: on-failure
+
+# Inspo:
+# https://community.grafana.com/t/hello-world-test-for-loki-promtail-and-grafana/90762/4
+  grafana:
+    image: grafana/grafana-enterprise
+    volumes:
+      - /data/grafana:/var/lib/grafana #fix this
+    deploy:
+      replicas: 1
+      update_config:
+        parallelism: 1
+        delay: 10s
+      restart_policy:
+        condition: on-failure
+      placement:
+        constraints:
+          - node.role == manager
+          # - node.labels.grafana == true
+
+  loki:
+  #fill this
+
 
   prometheus:
     image: prom/prometheus
