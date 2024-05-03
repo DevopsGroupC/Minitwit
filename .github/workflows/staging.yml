@@ -75,8 +75,8 @@ jobs:
         # Pulls minitwit image from Docker Hub and updates the swarm
         run: |
           ssh -i ~/.ssh/staging_key -o StrictHostKeyChecking=no $SSH_USER@$SSH_HOST << 'EOF'
-            export ConnectionStrings__DefaultConnection=$DB_CONNECTIONSTRING_STAGING
-            export DOCKER_USERNAME=$DOCKER_USERNAME
+            export ConnectionStrings__DefaultConnection=${{ secrets.DB_CONNECTIONSTRING_STAGING }}
+            export DOCKER_USERNAME=${{ secrets.DOCKER_USERNAME }}
             export STAGE=staging
 
             echo "----------------"
@@ -89,5 +89,3 @@ jobs:
         env:
           SSH_USER: ${{ secrets.SSH_USER }}
           SSH_HOST: ${{ secrets.SSH_HOST_PRE }}
-          DB_CONNECTIONSTRING_STAGING: ${{ secrets.DB_CONNECTIONSTRING_STAGING }}
-          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
