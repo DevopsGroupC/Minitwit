@@ -1,3 +1,12 @@
+# The following secrets are required from the repository's settings:
+# https://github.com/your_username/itu-minitwit-ci/settings/secrets/actions
+# DOCKER_USERNAME
+# DOCKER_PASSWORD
+# SSH_USER = root
+# SSH_KEY_PRE
+# SSH_HOST_PRE
+# DB_CONNECTIONSTRING_STAGING
+
 name: Preproduction Deployment #shoutout to the exercises session
 
 on:
@@ -6,14 +15,6 @@ on:
       - develop
       - fix/terraform
   workflow_dispatch:
-
-# The following secrets are required from the repository's settings:
-# https://github.com/your_username/itu-minitwit-ci/settings/secrets/actions
-# DOCKER_USERNAME
-# DOCKER_PASSWORD
-# SSH_USER = root
-# SSH_KEY_PRE
-# SSH_HOST_PRE
 
 jobs:
   build:
@@ -62,24 +63,26 @@ jobs:
           SSH_KEY: ${{ secrets.SSH_KEY_PRE }}
 
       - name: Copy files to server
-        # Updating all files on remote server from the remote_files_preproduction
+        # Updating stack files on remote server from the infrastructure/stack folder
         run: >
           scp -i ~/.ssh/staging_key -o StrictHostKeyChecking=no
-          ./csharp-minitwit/remote_files_preproduction/* $SSH_USER@$SSH_HOST:/csharp-minitwit
+          ./csharp-minitwit/infrastructure/stack/* $SSH_USER@$SSH_HOST:~/
         env:
           SSH_USER: ${{ secrets.SSH_USER }}
           SSH_HOST: ${{ secrets.SSH_HOST_PRE }}
 
       - name: Deploy to server
-        # Calls deploy.sh to pull csharp-minitwit image from Docker Hub and spin container up.
+        # Pulls minitwit image from Docker Hub and updates the swarm
         run: |
           ssh -i ~/.ssh/staging_key -o StrictHostKeyChecking=no $SSH_USER@$SSH_HOST << 'EOF'
-            export ConnectionStrings__DefaultConnection=${{ secrets.DB_CONNECTIONSTRING_STAGING }}
-            cd /csharp-minitwit
-            printenv
-            docker compose -f docker-compose.yml pull
-            docker compose -f docker-compose.yml up -d
+            export ConnectionStrings__DefaultConnection=$DB_CONNECTIONSTRING_STAGING
+            
+            docker compose -f docker-stack.yml pull
+
+            echo "Deploying stack 'minitwit'..."
+            docker stack deploy --compose-file docker-stack.yml minitwit
           EOF
         env:
           SSH_USER: ${{ secrets.SSH_USER }}
           SSH_HOST: ${{ secrets.SSH_HOST_PRE }}
+          DB_CONNECTIONSTRING_STAGING: ${{ secrets.DB_CONNECTIONSTRING_STAGING }}
