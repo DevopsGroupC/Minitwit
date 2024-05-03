@@ -1,0 +1,45 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+# Alertmanager configuration
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+          # - alertmanager:9093
+
+# Load rules once and periodically evaluate them according to the global 'evaluation_interval'.
+rule_files:
+  # - "first_rules.yml"
+  # - "second_rules.yml"
+
+scrape_configs:
+  # - job_name: "prometheus"
+
+  #   # metrics_path defaults to '/metrics'
+  #   # scheme defaults to 'http'.
+
+  #   static_configs:
+  #     - targets: ["localhost:9090"]
+
+  # Create a job for Docker Swarm containers.
+  - job_name: "dockerswarm"
+    dockerswarm_sd_configs:
+      - host: unix:///var/run/docker.sock
+        role: tasks
+    relabel_configs:
+      # Fetch metrics on port 9323.
+      - source_labels: [__meta_dockerswarm_node_address]
+        target_label: __address__
+        replacement: $1:9323
+      # Set hostname as instance label
+      - source_labels: [__meta_dockerswarm_node_hostname]
+        target_label: instance
+
+  - job_name: "csharp-minitwit"
+    scrape_interval: 5s
+    static_configs:
+      - targets: ["app:8080"] ## Port being scrapped, it is to "csharp-minitwit:host-gateway" extra host inside the corresponding docker-compose
+        labels:
+          group: "csharp-apps"

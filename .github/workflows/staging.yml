@@ -1,11 +1,3 @@
-name: Preproduction Deployment #shoutout to the exercises session
-
-on:
-  push:
-    branches:
-      - develop
-  workflow_dispatch:
-
 # The following secrets are required from the repository's settings:
 # https://github.com/your_username/itu-minitwit-ci/settings/secrets/actions
 # DOCKER_USERNAME
@@ -13,6 +5,16 @@ on:
 # SSH_USER = root
 # SSH_KEY_PRE
 # SSH_HOST_PRE
+# DB_CONNECTIONSTRING_STAGING
+
+name: Preproduction Deployment #shoutout to the exercises session
+
+on:
+  push:
+    branches:
+      - develop
+      - fix/terraform
+  workflow_dispatch:
 
 jobs:
   build:
@@ -31,16 +33,16 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v1
 
-      - name: Build and push csharptwit-preproduction
+      - name: Build and push csharptwit-staging
         uses: docker/build-push-action@v2
         with:
           context: ./csharp-minitwit
           file: ./csharp-minitwit/Dockerfile
           push: true
-          tags: ${{ secrets.DOCKER_USERNAME }}/csharptwit-preproduction:latest
-          cache-from: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/csharptwit-preproduction:webbuildcache
-          cache-to: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/csharptwit-preproduction:webbuildcache,mode=max
-          build-args: ENVIRONMENT=Preproduction
+          tags: ${{ secrets.DOCKER_USERNAME }}/csharptwit-staging:latest
+          cache-from: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/csharptwit-staging:webbuildcache
+          cache-to: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/csharptwit-staging:webbuildcache,mode=max
+          build-args: ENVIRONMENT=Staging
 
       #TODO: Add / adjust tests from py api maybe?
 
@@ -61,23 +63,24 @@ jobs:
           SSH_KEY: ${{ secrets.SSH_KEY_PRE }}
 
       - name: Copy files to server
-        # Updating all files on remote server from the remote_files_preproduction
+        # Updating stack files on remote server from the infrastructure/stack folder
         run: >
           scp -i ~/.ssh/staging_key -o StrictHostKeyChecking=no
-          ./csharp-minitwit/remote_files_preproduction/* $SSH_USER@$SSH_HOST:/csharp-minitwit
+          ./infrastructure/stack/* $SSH_USER@$SSH_HOST:~/
         env:
           SSH_USER: ${{ secrets.SSH_USER }}
           SSH_HOST: ${{ secrets.SSH_HOST_PRE }}
 
       - name: Deploy to server
-        # Calls deploy.sh to pull csharp-minitwit image from Docker Hub and spin container up.
+        # Pulls minitwit image from Docker Hub and updates the swarm
         run: |
           ssh -i ~/.ssh/staging_key -o StrictHostKeyChecking=no $SSH_USER@$SSH_HOST << 'EOF'
             export ConnectionStrings__DefaultConnection=${{ secrets.DB_CONNECTIONSTRING_STAGING }}
-            cd /csharp-minitwit
-            printenv
-            docker compose -f docker-compose.yml pull
-            docker compose -f docker-compose.yml up -d
+            export DOCKER_USERNAME=${{ secrets.DOCKER_USERNAME }}
+            export STAGE=staging
+
+            echo "Deploying stack 'minitwit'..."
+            docker stack deploy --compose-file minitwit_stack.yml minitwit
           EOF
         env:
           SSH_USER: ${{ secrets.SSH_USER }}

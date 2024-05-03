@@ -38,9 +38,9 @@ jobs:
           context: ./csharp-minitwit
           file: ./csharp-minitwit/Dockerfile
           push: true
-          tags: ${{ secrets.DOCKER_USERNAME }}/csharptwitimage:latest
-          cache-from: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/csharptwitimage:webbuildcache
-          cache-to: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/csharptwitimage:webbuildcache,mode=max
+          tags: ${{ secrets.DOCKER_USERNAME }}/csharptwit-production:latest
+          cache-from: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/csharptwit-production:webbuildcache
+          cache-to: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/csharptwit-production:webbuildcache,mode=max
           build-args: ENVIRONMENT=Production
 
       #TODO: Add / adjust tests from py api maybe?
