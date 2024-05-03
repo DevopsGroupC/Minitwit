@@ -77,7 +77,7 @@ jobs:
           ssh -i ~/.ssh/staging_key -o StrictHostKeyChecking=no $SSH_USER@$SSH_HOST << 'EOF'
             export ConnectionStrings__DefaultConnection=$DB_CONNECTIONSTRING_STAGING
             
-            docker compose -f docker-stack.yml pull
+            docker compose -f minitwit-stack.yml pull
 
             echo "Deploying stack 'minitwit'..."
             docker stack deploy --compose-file minitwit-stack.yml minitwit
