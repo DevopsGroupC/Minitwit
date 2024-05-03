@@ -79,7 +79,9 @@ jobs:
             export DOCKER_USERNAME=$DOCKER_USERNAME
             export STAGE=staging
 
-            docker compose -f minitwit_stack.yml pull
+            echo "----------------"
+            printenv
+            echo "----------------"
 
             echo "Deploying stack 'minitwit'..."
             docker stack deploy --compose-file minitwit_stack.yml minitwit
