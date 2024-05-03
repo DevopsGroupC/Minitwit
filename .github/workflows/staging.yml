@@ -76,8 +76,8 @@ jobs:
         run: |
           ssh -i ~/.ssh/staging_key -o StrictHostKeyChecking=no $SSH_USER@$SSH_HOST << 'EOF'
             export ConnectionStrings__DefaultConnection=$DB_CONNECTIONSTRING_STAGING
-            export STAGE=$STAGE
-            
+            export STAGE=staging
+
             docker compose -f minitwit_stack.yml pull
 
             echo "Deploying stack 'minitwit'..."
@@ -87,4 +87,3 @@ jobs:
           SSH_USER: ${{ secrets.SSH_USER }}
           SSH_HOST: ${{ secrets.SSH_HOST_PRE }}
           DB_CONNECTIONSTRING_STAGING: ${{ secrets.DB_CONNECTIONSTRING_STAGING }}
-          STAGE: staging
