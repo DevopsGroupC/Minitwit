@@ -13,7 +13,7 @@ resource "digitalocean_ssh_key" "minitwit" {
 # create cloud vm
 resource "digitalocean_droplet" "minitwit-swarm-leader" {
   image = "docker-20-04"
-  name = "minitwit-swarm-leader"
+  name = "minitwit-swarm-leader-${var.STAGE}"
   region = var.region
   size = "s-1vcpu-1gb"
   # add public ssh key so we can access the machine
@@ -58,15 +58,6 @@ resource "digitalocean_droplet" "minitwit-swarm-leader" {
   }
 }
 
-# resource "null_resource" "swarm-init-folder" {
-#   depends_on = [digitalocean_droplet.minitwit-swarm-leader]
-
-#   # save the worker join token
-#   provisioner "local-exec" {
-#     command = "mkdir -p temp"
-#   }
-# }
-
 resource "null_resource" "swarm-worker-token" {
   depends_on = [digitalocean_droplet.minitwit-swarm-leader]
 
@@ -97,10 +88,10 @@ resource "digitalocean_droplet" "minitwit-swarm-manager" {
   depends_on = [null_resource.swarm-manager-token]
 
   # number of vms to create
-  count = 1
+  count = 2
 
   image = "docker-20-04"
-  name = "minitwit-swarm-manager-${count.index}"
+  name = "minitwit-swarm-manager-${var.STAGE}-${count.index}"
   region = var.region
   size = "s-1vcpu-1gb"
   # add public ssh key so we can access the machine
@@ -153,10 +144,10 @@ resource "digitalocean_droplet" "minitwit-swarm-worker" {
   depends_on = [null_resource.swarm-worker-token]
 
   # number of vms to create
-  count = 2
+  count = 1
 
   image = "docker-20-04"
-  name = "minitwit-swarm-worker-${count.index}"
+  name = "minitwit-swarm-worker-${var.STAGE}-${count.index}"
   region = var.region
   size = "s-1vcpu-1gb"
   # add public ssh key so we can access the machine

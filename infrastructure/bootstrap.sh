@@ -7,6 +7,32 @@ echo -e "\n--> Bootstrapping Minitwit\n"
 echo -e "\n--> Loading environment variables from secrets file\n"
 source secrets
 
+# Check if the variable is empty
+if [ -z "$ENVIRONMENT" ]; then
+    echo "Environment variable is empty. Please set it to either 'production' or 'staging'."
+    exit 1
+fi
+
+# Check if the variable is either "production" or "staging"
+if [ "$ENVIRONMENT" != "production" ] && [ "$ENVIRONMENT" != "staging" ]; then
+    echo "Invalid environment. Please set the variable to either 'production' or 'staging'."
+    exit 1
+fi
+
+# Check if the variable is "production"
+if [ "$ENVIRONMENT" = "production" ]; then
+    source secrets
+fi
+
+# Check if the variable is "staging"
+if [ "$ENVIRONMENT" = "staging" ]; then
+    source secrets.staging
+fi
+
+# Proceed with the script
+export TF_VAR_STAGE=$ENVIRONMENT
+echo "Environment is set to $ENVIRONMENT"
+
 echo -e "\n--> Checking that environment variables are set\n"
 # check that all variables are set
 [ -z "$TF_VAR_do_token" ] && echo "TF_VAR_do_token is not set" && exit
@@ -43,7 +69,7 @@ terraform apply -auto-approve
 # deploy the stack to the cluster
 echo -e "\n--> Deploying the Csharp-Minitwit stack to the cluster\n"
 
-command="export STAGE=$STAGE DOCKER_USERNAME=$DOCKER_USERNAME ConnectionStrings__DefaultConnection='$ConnectionStrings__DefaultConnection' && docker stack deploy minitwit -c minitwit_stack.yml"
+command="export STAGE=$TF_VAR_STAGE DOCKER_USERNAME=$DOCKER_USERNAME ConnectionStrings__DefaultConnection='$ConnectionStrings__DefaultConnection' && docker stack deploy minitwit -c minitwit_stack.yml"
 echo "$command"
 
 ssh \
@@ -54,6 +80,5 @@ ssh \
 
 echo -e "\n--> Done bootstrapping Minitwit"
 echo -e "--> Site will be available @ http://$(terraform output -raw public_ip)"
-# echo -e "--> You can check the status of swarm cluster @ http://$(terraform output -raw minitwit-swarm-leader-ip-address):8888"
 echo -e "--> ssh to swarm leader with 'ssh root@\$(terraform output -raw minitwit-swarm-leader-ip-address) -i ssh_key/terraform'"
 echo -e "--> To remove the infrastructure run: terraform destroy -auto-approve"

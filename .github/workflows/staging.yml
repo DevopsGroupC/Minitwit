@@ -79,10 +79,6 @@ jobs:
             export DOCKER_USERNAME=${{ secrets.DOCKER_USERNAME }}
             export STAGE=staging
 
-            echo "----------------"
-            printenv
-            echo "----------------"
-
             echo "Deploying stack 'minitwit'..."
             docker stack deploy --compose-file minitwit_stack.yml minitwit
           EOF

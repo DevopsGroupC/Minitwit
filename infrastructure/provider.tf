@@ -12,6 +12,7 @@ variable "pvt_key" {}
 
 # export TF_VAR_existing_ip=xxx
 variable "existing_ip" {}
+variable "STAGE" {}
 
 # setup the provider
 terraform {
