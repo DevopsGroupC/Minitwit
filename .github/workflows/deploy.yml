@@ -17,13 +17,12 @@ on:
       - feature/156-change-workflow-to-a-single-file-+-environments
   workflow_dispatch:
 
-env:
-  ENVIRONMENT: ${{ github.ref == 'refs/heads/main' && 'production' || github.ref == 'refs/heads/staging' && 'staging' }}
-
-
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      ENVIRONMENT: ${{ github.ref == 'refs/heads/main' && 'production' || github.ref == 'refs/heads/staging' && 'staging' }}
+
 
     steps:
       - name: Checkout
@@ -32,11 +31,11 @@ jobs:
       - name: Show environment
         run: echo "Current environment is ${{ env.ENVIRONMENT }}."
 
-      - name: Login to Docker Hub
-        uses: docker/login-action@v1
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
+#       - name: Login to Docker Hub
+#         uses: docker/login-action@v1
+#         with:
+#           username: ${{ secrets.DOCKER_USERNAME }}
+#           password: ${{ secrets.DOCKER_PASSWORD }}
 
 #       - name: Set up Docker Buildx
 #         uses: docker/setup-buildx-action@v1
