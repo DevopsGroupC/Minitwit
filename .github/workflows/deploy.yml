@@ -21,7 +21,10 @@ jobs:
   build:
     runs-on: ubuntu-latest
     env:
-      ENVIRONMENT: ${{ github.ref == 'refs/heads/main' && 'production' || github.ref == 'refs/heads/staging' && 'staging' }}
+      ENVIRONMENT: ${{ 
+        github.ref == 'refs/heads/main' && 'production' ||
+        github.ref == 'refs/heads/staging' && 'staging' ||
+        github.ref == 'refs/heads/feature/156-change-workflow-to-a-single-file-+-environments' && 'staging' }}
 
 
     steps:
