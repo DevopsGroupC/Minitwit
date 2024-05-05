@@ -24,7 +24,7 @@ jobs:
       ENVIRONMENT: ${{ 
         github.ref == 'refs/heads/main' && 'production' ||
         github.ref == 'refs/heads/develop' && 'staging' ||
-        github.ref == 'refs/heads/feature/156-change-workflow-to-a-single-file-+-environments' && '' }}
+        github.ref == 'refs/heads/feature/156-change-workflow-to-a-single-file-+-environments' && 'staging' }}
 
     steps:
       - name: Check environment
@@ -39,54 +39,54 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
 
-#       - name: Login to Docker Hub
-#         uses: docker/login-action@v1
-#         with:
-#           username: ${{ secrets.DOCKER_USERNAME }}
-#           password: ${{ secrets.DOCKER_PASSWORD }}
+      - name: Login to Docker Hub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
 
-#       - name: Set up Docker Buildx
-#         uses: docker/setup-buildx-action@v1
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
 
-#       - name: Build and push csharptwit-staging
-#         uses: docker/build-push-action@v2
-#         with:
-#           context: ./csharp-minitwit
-#           file: ./csharp-minitwit/Dockerfile
-#           push: true
-#           tags: ${{ secrets.DOCKER_USERNAME }}/csharptwit-staging:latest
-#           cache-from: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/csharptwit-staging:webbuildcache
-#           cache-to: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/csharptwit-staging:webbuildcache,mode=max
-#           build-args: ENVIRONMENT=Staging
+      - name: Build and push csharptwit-staging
+        uses: docker/build-push-action@v2
+        with:
+          context: ./csharp-minitwit
+          file: ./csharp-minitwit/Dockerfile
+          push: true
+          tags: ${{ secrets.DOCKER_USERNAME }}/csharptwit-staging:latest
+          cache-from: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/csharptwit-staging:webbuildcache
+          cache-to: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/csharptwit-staging:webbuildcache,mode=max
+          build-args: ENVIRONMENT=Staging
 
-#       - name: Configure SSH
-#         run: |
-#           mkdir -p ~/.ssh/
-#           echo "$SSH_KEY" > ~/.ssh/staging_key
-#           chmod 600 ~/.ssh/staging_key
-#         env:
-#           SSH_KEY: ${{ secrets.SSH_KEY_PRE }}
+      - name: Configure SSH
+        run: |
+          mkdir -p ~/.ssh/
+          echo "$SSH_KEY" > ~/.ssh/staging_key
+          chmod 600 ~/.ssh/staging_key
+        env:
+          SSH_KEY: ${{ secrets.SSH_KEY_PRE }}
 
-#       - name: Copy files to server
-#         # Updating stack files on remote server from the infrastructure/stack folder
-#         run: >
-#           scp -i ~/.ssh/staging_key -o StrictHostKeyChecking=no
-#           ./infrastructure/stack/* $SSH_USER@$SSH_HOST:~/
-#         env:
-#           SSH_USER: ${{ secrets.SSH_USER }}
-#           SSH_HOST: ${{ secrets.SSH_HOST_PRE }}
+      - name: Copy files to server
+        # Updating stack files on remote server from the infrastructure/stack folder
+        run: >
+          scp -i ~/.ssh/staging_key -o StrictHostKeyChecking=no
+          ./infrastructure/stack/* $SSH_USER@$SSH_HOST:~/
+        env:
+          SSH_USER: ${{ secrets.SSH_USER }}
+          SSH_HOST: ${{ secrets.SSH_HOST_PRE }}
 
-#       - name: Deploy to server
-#         # Pulls minitwit image from Docker Hub and updates the swarm
-#         run: |
-#           ssh -i ~/.ssh/staging_key -o StrictHostKeyChecking=no $SSH_USER@$SSH_HOST << 'EOF'
-#             export ConnectionStrings__DefaultConnection=${{ secrets.DB_CONNECTIONSTRING_STAGING }}
-#             export DOCKER_USERNAME=${{ secrets.DOCKER_USERNAME }}
-#             export STAGE=staging
+      - name: Deploy to server
+        # Pulls minitwit image from Docker Hub and updates the swarm
+        run: |
+          ssh -i ~/.ssh/staging_key -o StrictHostKeyChecking=no $SSH_USER@$SSH_HOST << 'EOF'
+            export ConnectionStrings__DefaultConnection=${{ secrets.DB_CONNECTIONSTRING_STAGING }}
+            export DOCKER_USERNAME=${{ secrets.DOCKER_USERNAME }}
+            export STAGE=staging
 
-#             echo "Deploying stack 'minitwit'..."
-#             docker stack deploy --compose-file minitwit_stack.yml minitwit
-#           EOF
-#         env:
-#           SSH_USER: ${{ secrets.SSH_USER }}
-#           SSH_HOST: ${{ secrets.SSH_HOST_PRE }}
+            echo "Deploying stack 'minitwit'..."
+            docker stack deploy --compose-file minitwit_stack.yml minitwit
+          EOF
+        env:
+          SSH_USER: ${{ secrets.SSH_USER }}
+          SSH_HOST: ${{ secrets.SSH_HOST_PRE }}
