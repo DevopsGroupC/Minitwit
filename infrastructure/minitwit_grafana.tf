@@ -18,16 +18,20 @@ resource "digitalocean_droplet" "grafana-server" {
   # Install Grafana using provisioner
   provisioner "remote-exec" {
     inline = [
+      # source: https://grafana.com/docs/grafana/latest/setup-grafana/installation/debian/
       # Add Grafana repository and install Grafana
-      "wget -q -O - https://packages.grafana.com/gpg.key | sudo apt-key add -",
-      "echo 'deb https://packages.grafana.com/oss/deb stable main' | sudo tee -a /etc/apt/sources.list.d/grafana.list",
+      "sudo apt-get install -y apt-transport-https software-properties-common wget",
+      "sudo mkdir -p /etc/apt/keyrings/",
+      "wget -q -O - https://apt.grafana.com/gpg.key | gpg --dearmor | sudo tee /etc/apt/keyrings/grafana.gpg > /dev/null",
+      "echo 'deb [signed-by=/etc/apt/keyrings/grafana.gpg] https://apt.grafana.com stable main' | sudo tee -a /etc/apt/sources.list.d/grafana.list",
       "sudo apt-get update",
-      "sudo apt-get install -y grafana",
+      # Installs the latest Enterprise release:
+      "sudo apt-get install grafana-enterprise",
 
       # Start Grafana service
       "sudo systemctl daemon-reload",
       "sudo systemctl start grafana-server",
-      "sudo systemctl enable grafana-server"
+      "sudo systemctl enable grafana-server.service"
     ]
   }
 }
