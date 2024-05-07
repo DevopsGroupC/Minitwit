@@ -20,7 +20,7 @@ echo -e "\n--> Loading environment variables from secrets file\n"
 if [ "$1" = "production" ]; then
     source secrets
 elif [ "$1" = "staging" ]; then
-    source secrets-staging
+    source secrets.staging
 fi
 
 # Proceed with the script

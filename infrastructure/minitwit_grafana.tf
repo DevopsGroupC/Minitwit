@@ -1,6 +1,6 @@
 # Create cloud VM for Grafana server
 resource "digitalocean_droplet" "grafana-server" {
-  image   = "ubuntu-22-04"  # Use Ubuntu 22.04 image
+  image   = "ubuntu-22-04-x64"  # Use Ubuntu 22.04 image
   name    = "grafana-server-${var.STAGE}"
   region  = var.region
   size    = "s-1vcpu-2gb"
@@ -20,13 +20,21 @@ resource "digitalocean_droplet" "grafana-server" {
     inline = [
       # source: https://grafana.com/docs/grafana/latest/setup-grafana/installation/debian/
       # Add Grafana repository and install Grafana
+
+      # Function to wait for apt lock to be available
+      "function wait_for_apt() { while sudo fuser /var/lib/dpkg/lock >/dev/null 2>&1 || sudo fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1 || sudo fuser /var/cache/apt/archives/lock >/dev/null 2>&1; do sleep 5; done; }",
+      
+      "wait_for_apt",
+      "sudo apt-get update",
       "sudo apt-get install -y apt-transport-https software-properties-common wget",
       "sudo mkdir -p /etc/apt/keyrings/",
       "wget -q -O - https://apt.grafana.com/gpg.key | gpg --dearmor | sudo tee /etc/apt/keyrings/grafana.gpg > /dev/null",
       "echo 'deb [signed-by=/etc/apt/keyrings/grafana.gpg] https://apt.grafana.com stable main' | sudo tee -a /etc/apt/sources.list.d/grafana.list",
+      # "sudo apt-get update",
+      # Install Grafana and Loki together
+      "wait_for_apt",
       "sudo apt-get update",
-      # Installs the latest Enterprise release:
-      "sudo apt-get install grafana-enterprise",
+      "sudo apt-get install -y grafana-enterprise loki",
 
       # Start Grafana service
       "sudo systemctl daemon-reload",
@@ -35,9 +43,7 @@ resource "digitalocean_droplet" "grafana-server" {
 
       # TODO: customise log path
 
-      #install loki
-      "apt-get update",
-      "apt-get install loki",
+      "ufw allow 3000",
 
     ]
   }
@@ -51,40 +57,56 @@ resource "digitalocean_droplet" "grafana-server" {
 
 #source: https://registry.terraform.io/providers/grafana/grafana/latest/docs/resources/data_source
 resource "grafana_data_source" "database" {
-  type                = "postgreSQL"
-  name                = "database"
+  depends_on          = [digitalocean_droplet.grafana-server]
+  type                = "postgres"
+  name                = "minitwit-database"
   url                 = var.database_url 
-  basic_auth_enabled  = true
-  basic_auth_username = var.database_user
+  uid                 = "adhtrrc5eetq8a"
   database_name       = var.database_name 
+  username            = var.database_user
+  secure_json_data_encoded = jsonencode({
+    password = var.database_pwd
+    tlsClientCert = "" # TODO: add ssl cert in secrets
+  })
 
   json_data_encoded = jsonencode({
-    authType          = "default"
-    basicAuthPassword = var.database_pwd
+    sslmode          = "require"
+    maxOpenConns = 4
+    maxIdleConns = 4
   })
 }
 
 resource "grafana_data_source" "prometheus" {
-  type          = "prometheus"
-  name          = "prometheus"
-  url           = "http://${public_ip}:9090" 
+  depends_on          = [digitalocean_droplet.grafana-server]
+  type                = "prometheus"
+  name                = "minitwit"
+  uid                 = "cdhtgakl62xhce"
+  url                 = "http://${digitalocean_droplet.minitwit-swarm-leader.ipv4_address}:9090" 
 }
 
 resource "grafana_data_source" "loki" {
-  type          = "loki"
-  name          = "Loki"
-  url           = "http://${digitalocean_droplet.grafana-server.ipv4_address}:3100" 
-  access_mode       = "proxy"
+  depends_on          = [digitalocean_droplet.grafana-server]
+  type                = "loki"
+  name                = "Loki"
+  url                 = "http://${digitalocean_droplet.grafana-server.ipv4_address}:3100" 
+  access_mode         = "proxy"
 }
 
-resource "grafana_dashboard" "test_folder" {
-  org_id = grafana_organization.my_org.org_id
-  folder = grafana_folder.my_folder.id
-  config_json = jsonencode({
-    "title" : "My Dashboard Title",
-    "uid" : "my-dashboard-uid"
-    // ... other dashboard properties
-  })
+resource "grafana_folder" "minitwit_folder" {
+  depends_on          = [digitalocean_droplet.grafana-server]
+  title               = "Minitwit"
+  uid                 = "minitwit-uid"
+}
+
+resource "grafana_dashboard" "minitwit_dashboard" {
+  depends_on          = [digitalocean_droplet.grafana-server, grafana_data_source.database, grafana_data_source.prometheus, grafana_folder.minitwit_folder]
+  folder              = grafana_folder.minitwit_folder.uid
+  config_json         = file("${path.module}/grafana_dashboards/dashboard.json")
+}
+
+resource "grafana_organization_preferences" "test" {
+  depends_on          = [grafana_dashboard.minitwit_dashboard]
+  home_dashboard_uid = grafana_dashboard.minitwit_dashboard.uid
 }
 
 output "grafana-server-ip-address" {
