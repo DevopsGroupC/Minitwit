@@ -10,9 +10,16 @@ variable "region" {}
 variable "pub_key" {}
 variable "pvt_key" {}
 
-# export TF_VAR_existing_ip=xxx
+# custom exports
 variable "existing_ip" {}
 variable "STAGE" {}
+
+#grafana and loki related configs
+variable "grafana_auth" {}
+variable "database_name" {}
+variable "database_user" {}
+variable "database_pwd" {}
+variable "database_url" {}
 
 # setup the provider
 terraform {
@@ -36,6 +43,8 @@ provider "digitalocean" {
   token = var.do_token
 }
 
+# source: https://registry.terraform.io/providers/grafana/grafana/2.17.0/docs?utm_content=documentLink&utm_medium=Visual+Studio+Code&utm_source=terraform-ls
 provider "grafana" {
-  # Configuration options
+  url  = "http://${digitalocean_droplet.grafana-server.ipv4_address}:3000/"
+  auth = var.grafana_auth
 }

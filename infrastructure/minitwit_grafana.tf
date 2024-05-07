@@ -53,30 +53,39 @@ resource "digitalocean_droplet" "grafana-server" {
 resource "grafana_data_source" "database" {
   type                = "postgreSQL"
   name                = "database"
-  url                 = "http://influxdb.example.net:8086/" #secrets
+  url                 = var.database_url 
   basic_auth_enabled  = true
-  basic_auth_username = "grafana" #to secrets
-  database_name       = "" #to secrets
+  basic_auth_username = var.database_user
+  database_name       = var.database_name 
 
   json_data_encoded = jsonencode({
     authType          = "default"
-    basicAuthPassword = "mypassword" #to secrets
+    basicAuthPassword = var.database_pwd
   })
 }
 
 resource "grafana_data_source" "prometheus" {
   type          = "prometheus"
   name          = "prometheus"
-  url           = "http://localhost:3100" #change url + secrets
+  url           = "http://${public_ip}:9090" 
 }
 
 resource "grafana_data_source" "loki" {
   type          = "loki"
   name          = "Loki"
-  url           = "http://localhost:3100" #change url + secrets
+  url           = "http://${digitalocean_droplet.grafana-server.ipv4_address}:3100" 
   access_mode       = "proxy"
 }
 
+resource "grafana_dashboard" "test_folder" {
+  org_id = grafana_organization.my_org.org_id
+  folder = grafana_folder.my_folder.id
+  config_json = jsonencode({
+    "title" : "My Dashboard Title",
+    "uid" : "my-dashboard-uid"
+    // ... other dashboard properties
+  })
+}
 
 output "grafana-server-ip-address" {
   value = digitalocean_droplet.grafana-server.ipv4_address
