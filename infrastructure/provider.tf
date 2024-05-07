@@ -25,9 +25,17 @@ terraform {
                         source = "hashicorp/null"
                         version = "3.1.0"
                 }
+                grafana = {
+                        source = "grafana/grafana"
+                        version = "2.18.0"
+                }
         }
 }
 
 provider "digitalocean" {
   token = var.do_token
+}
+
+provider "grafana" {
+  # Configuration options
 }

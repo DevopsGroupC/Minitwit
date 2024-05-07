@@ -1,3 +1,4 @@
+# Volume for grafana-server, for storing log and monitoring data
 resource "digitalocean_volume" "minitwit-data" {
   region                  = "fra1"
   name                    = "minitwit-data"
@@ -7,6 +8,6 @@ resource "digitalocean_volume" "minitwit-data" {
 }
 
 resource "digitalocean_volume_attachment" "minitwit-data" {
-  droplet_id = digitalocean_droplet.minitwit-swarm-leader.id
+  droplet_id = digitalocean_droplet.grafana-server.id
   volume_id  = digitalocean_volume.minitwit-data.id
 }

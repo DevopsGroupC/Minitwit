@@ -31,10 +31,52 @@ resource "digitalocean_droplet" "grafana-server" {
       # Start Grafana service
       "sudo systemctl daemon-reload",
       "sudo systemctl start grafana-server",
-      "sudo systemctl enable grafana-server.service"
+      "sudo systemctl enable grafana-server.service",
+
+      # TODO: customise log path
+
+      #install loki
+      "apt-get update",
+      "apt-get install loki",
+
     ]
   }
 }
+
+# TODO: the above website shows that i can connect to grafana via terraform and add datasources
+# Add sql datasource
+# Add minitwit prometheus datasource
+# Add loki datasource (before adding loki datasource, we must also configure loki)
+
+
+#source: https://registry.terraform.io/providers/grafana/grafana/latest/docs/resources/data_source
+resource "grafana_data_source" "database" {
+  type                = "postgreSQL"
+  name                = "database"
+  url                 = "http://influxdb.example.net:8086/" #secrets
+  basic_auth_enabled  = true
+  basic_auth_username = "grafana" #to secrets
+  database_name       = "" #to secrets
+
+  json_data_encoded = jsonencode({
+    authType          = "default"
+    basicAuthPassword = "mypassword" #to secrets
+  })
+}
+
+resource "grafana_data_source" "prometheus" {
+  type          = "prometheus"
+  name          = "prometheus"
+  url           = "http://localhost:3100" #change url + secrets
+}
+
+resource "grafana_data_source" "loki" {
+  type          = "loki"
+  name          = "Loki"
+  url           = "http://localhost:3100" #change url + secrets
+  access_mode       = "proxy"
+}
+
 
 output "grafana-server-ip-address" {
   value = digitalocean_droplet.grafana-server.ipv4_address
