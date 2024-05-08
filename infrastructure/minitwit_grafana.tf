@@ -1,5 +1,6 @@
 # Create cloud VM for Grafana server
 resource "digitalocean_droplet" "grafana-server" {
+
   image   = "ubuntu-22-04-x64"  # Use Ubuntu 22.04 image
   name    = "grafana-server-${var.STAGE}"
   region  = var.region
@@ -22,21 +23,32 @@ resource "digitalocean_droplet" "grafana-server" {
       # Add Grafana repository and install Grafana
 
       # Function to wait for apt lock to be available
-      "function wait_for_apt() { while sudo fuser /var/lib/dpkg/lock >/dev/null 2>&1 || sudo fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1 || sudo fuser /var/cache/apt/archives/lock >/dev/null 2>&1; do sleep 5; done; }",
+      "export DEBIAN_FRONTEND=noninteractive",
+      "export NEEDRESTART_MODE=a",
       
-      "wait_for_apt",
-      "sudo apt-get update",
-      "sudo apt-get install -y apt-transport-https software-properties-common wget",
-      "sudo mkdir -p /etc/apt/keyrings/",
-      "wget -q -O - https://apt.grafana.com/gpg.key | gpg --dearmor | sudo tee /etc/apt/keyrings/grafana.gpg > /dev/null",
-      "echo 'deb [signed-by=/etc/apt/keyrings/grafana.gpg] https://apt.grafana.com stable main' | sudo tee -a /etc/apt/sources.list.d/grafana.list",
+      "sudo --preserve-env=DEBIAN_FRONTEND,NEEDRESTART_MODE apt-get update -y",
+
+      "sudo apt-get install -y adduser libfontconfig1 musl",
+      "wget https://dl.grafana.com/enterprise/release/grafana-enterprise_10.4.2_amd64.deb",
+      "sudo dpkg -i grafana-enterprise_10.4.2_amd64.deb",
+
+
+      # "sudo apt-get install -y apt-transport-https software-properties-common wget",
+      # "sudo mkdir -p /etc/apt/keyrings/",
+      # "wget -q -O - https://apt.grafana.com/gpg.key | gpg --dearmor | sudo tee /etc/apt/keyrings/grafana.gpg > /dev/null",
+      # "echo 'deb [signed-by=/etc/apt/keyrings/grafana.gpg] https://apt.grafana.com stable main' | sudo tee -a /etc/apt/sources.list.d/grafana.list",
+      # # "sudo apt-get update",
+      # # Install Grafana and Loki together
       # "sudo apt-get update",
-      # Install Grafana and Loki together
-      "wait_for_apt",
-      "sudo apt-get update",
-      "sudo apt-get install -y grafana-enterprise loki",
+
+      # "wait_for_apt",
+      # "sudo apt-get install -y grafana-enterprise loki",
 
       # Start Grafana service
+      "sudo --preserve-env=DEBIAN_FRONTEND,NEEDRESTART_MODE apt-get update -y",
+
+      "sudo --preserve-env=DEBIAN_FRONTEND,NEEDRESTART_MODE apt-get upgrade -y",
+
       "sudo systemctl daemon-reload",
       "sudo systemctl start grafana-server",
       "sudo systemctl enable grafana-server.service",
@@ -44,7 +56,7 @@ resource "digitalocean_droplet" "grafana-server" {
       # TODO: customise log path
 
       "ufw allow 3000",
-
+      "'"
     ]
   }
 }

@@ -63,7 +63,7 @@ resource "null_resource" "swarm-worker-token" {
 
   # save the worker join token
   provisioner "local-exec" {
-    command = "ssh -o 'ConnectionAttempts 3600' -o 'StrictHostKeyChecking no' root@${digitalocean_droplet.minitwit-swarm-leader.ipv4_address} -i ${var.pvt_key} 'docker swarm join-token worker -q' > temp/worker_token"
+    command = "ssh -o 'ConnectionAttempts 3600' -o 'StrictHostKeyChecking no' root@${digitalocean_droplet.minitwit-swarm-leader.ipv4_address} -i ssh_key/terraform-${var.STAGE} 'docker swarm join-token worker -q' > temp/worker_token"
   }
 }
 
@@ -71,7 +71,7 @@ resource "null_resource" "swarm-manager-token" {
   depends_on = [digitalocean_droplet.minitwit-swarm-leader]
   # save the manager join token
   provisioner "local-exec" {
-    command = "ssh -o 'ConnectionAttempts 3600' -o 'StrictHostKeyChecking no' root@${digitalocean_droplet.minitwit-swarm-leader.ipv4_address} -i ${var.pvt_key} 'docker swarm join-token manager -q' > temp/manager_token"
+    command = "ssh -o 'ConnectionAttempts 3600' -o 'StrictHostKeyChecking no' root@${digitalocean_droplet.minitwit-swarm-leader.ipv4_address} -i ssh_key/terraform-${var.STAGE} 'docker swarm join-token manager -q' > temp/manager_token"
   }
 }
 

@@ -43,6 +43,19 @@ if [ ! -f "$TF_VAR_pvt_key" ] && [ ! -f "$TF_VAR_pub_key" ]; then
     echo "SSH key pair not present" && exit
 fi
 
-# Remove infrastructure
-echo -e "\n--> Removing Infrastructure\n"
-terraform destroy -auto-approve
+echo -e "\n--> Initializing terraform\n"
+# initialize terraform
+terraform init \
+    -backend-config "bucket=$SPACE_NAME" \
+    -backend-config "key=$STATE_FILE" \
+    -backend-config "access_key=$AWS_ACCESS_KEY_ID" \
+    -backend-config "secret_key=$AWS_SECRET_ACCESS_KEY"
+
+    
+# # Remove infrastructure
+# echo -e "\n--> Removing Infrastructure\n"
+# terraform destroy -auto-approve
+
+## OPTIONAL: Destroys a target resource:
+## Comment out the resource above when using this one:
+terraform destroy --target digitalocean_droplet.grafana-server
