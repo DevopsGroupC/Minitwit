@@ -1,0 +1,26 @@
+version: '3.8'
+services:
+  grafana:
+    image: grafana/grafana-enterprise
+    container_name: grafana
+    restart: unless-stopped
+    ports:
+      - '3000:3000'
+    volumes:
+      - /mnt/minitwit_data/grafana:/var/lib/grafana
+    networks:
+      - monitoring
+
+  loki:
+    image: grafana/loki:latest
+    command: -config.file=/root/loki-config.yml
+    volumes:
+      - /mnt/minitwit_data/loki:/opt/loki
+    ports:
+      - "3100:3100"
+    networks:
+      - monitoring
+
+networks:
+  monitoring:
+    external: true
