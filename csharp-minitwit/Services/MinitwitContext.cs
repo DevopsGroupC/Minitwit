@@ -62,6 +62,10 @@ public partial class MinitwitContext : DbContext
 
             entity.Property(e => e.WhoId).HasColumnName("who_id");
             entity.Property(e => e.WhomId).HasColumnName("whom_id");
+
+            entity.HasIndex(e => e.who_id);
+            entity.HasIndex(e => e.whom_id);
+
         });
 
         modelBuilder.Entity<Message>(entity =>
@@ -82,13 +86,18 @@ public partial class MinitwitContext : DbContext
             entity.Property(e => e.Text)
                 .HasColumnType("text")
                 .HasColumnName("text");
+
+            entity.HasIndex(e => e.pub_date);
+            entity.HasIndex(e => e.flagged);
         });
 
         modelBuilder.Entity<User>(entity =>
         {
             entity.ToTable("user");
 
-            entity.Property(e => e.UserId).HasColumnName("user_id").ValueGeneratedOnAdd();
+            entity.Property(e => e.UserId)
+                .HasColumnName("user_id")
+                .ValueGeneratedOnAdd();
             entity.Property(e => e.Email)
                 .HasColumnType("text")
                 .HasColumnName("email");
@@ -98,7 +107,9 @@ public partial class MinitwitContext : DbContext
             entity.Property(e => e.Username)
                 .HasColumnType("text")
                 .HasColumnName("username");
+
             entity.HasIndex(e => e.Username);
+            entity.HasIndex(e => e.UserId)
         });
 
         modelBuilder.Entity<MetaData>(entity =>
