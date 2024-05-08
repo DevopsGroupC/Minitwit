@@ -44,7 +44,7 @@ resource "null_resource" "run_docker_compose" {
       timeout     = "2m"
     }
 
-  # save the worker join token
+  # mount the volume 
   provisioner "remote-exec" {
     inline = [
       "mkdir -p /mnt/minitwit_data",
@@ -65,7 +65,7 @@ resource "null_resource" "run_docker_compose" {
 
 
 #source: https://registry.terraform.io/providers/grafana/grafana/latest/docs/resources/data_source
-resource "grafana_data_source" "database" {
+resource "grafana_data_source" "database1" {
   depends_on          = [null_resource.run_docker_compose]
   type                = "postgres"
   name                = "minitwit-database"
@@ -86,29 +86,29 @@ resource "grafana_data_source" "database" {
 }
 
 resource "grafana_data_source" "prometheus" {
-  depends_on          = [digitalocean_droplet.grafana-server]
+  depends_on          = [null_resource.run_docker_compose]
   type                = "prometheus"
   name                = "minitwit"
   uid                 = "cdhtgakl62xhce"
   url                 = "http://${digitalocean_droplet.minitwit-swarm-leader.ipv4_address}:9090" 
 }
 
-# resource "grafana_data_source" "loki" {
-#   depends_on          = [digitalocean_droplet.grafana-server]
-#   type                = "loki"
-#   name                = "Loki"
-#   url                 = "http://${digitalocean_droplet.grafana-server.ipv4_address}:3100" 
-#   access_mode         = "proxy"
-# }
+resource "grafana_data_source" "loki" {
+  depends_on          = [null_resource.run_docker_compose]
+  type                = "loki"
+  name                = "Loki"
+  url                 = "http://${digitalocean_droplet.grafana-server.ipv4_address}:3100" 
+  access_mode         = "proxy"
+}
 
 resource "grafana_folder" "minitwit_folder" {
-  depends_on          = [digitalocean_droplet.grafana-server]
+  depends_on          = [null_resource.run_docker_compose]
   title               = "Minitwit"
   uid                 = "minitwit-uid"
 }
 
 resource "grafana_dashboard" "minitwit_dashboard" {
-  depends_on          = [digitalocean_droplet.grafana-server, grafana_data_source.database, grafana_data_source.prometheus, grafana_folder.minitwit_folder]
+# depends_on          = [null_resource.run_docker_compose, grafana_data_source.database, grafana_data_source.prometheus, grafana_data_source.loki, grafana_folder.minitwit_folder] #should Loki be added here??? I have added it
   folder              = grafana_folder.minitwit_folder.uid
   config_json         = file("${path.module}/grafana_dashboards/dashboard.json")
 }

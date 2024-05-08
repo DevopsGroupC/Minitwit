@@ -8,19 +8,14 @@ services:
       - '3000:3000'
     volumes:
       - /mnt/minitwit_data/grafana:/var/lib/grafana
-    networks:
-      - monitoring
+    user: root #might not be ideal, maybe it would be better to give the right permissions in the grafana terraform file
 
   loki:
     image: grafana/loki:latest
-    command: -config.file=/root/loki-config.yml
+    command: -config.file=/opt/loki/loki-config.yml
     volumes:
+      - ./loki-config.yml:/opt/loki/loki-config.yml
       - /mnt/minitwit_data/loki:/opt/loki
     ports:
-      - "3100:3100"
-    networks:
-      - monitoring
-
-networks:
-  monitoring:
-    external: true
+      - "3100:3100" 
+    user: root # Set user to root
