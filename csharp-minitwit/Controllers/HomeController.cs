@@ -206,6 +206,9 @@ public class HomeController(
         return View();
     }
 
+    [HttpGet("/{username}/followers/{follower}")]
+
+
     [HttpGet("/{username}")]
     public async Task<IActionResult> UserTimeline(string username)
     {

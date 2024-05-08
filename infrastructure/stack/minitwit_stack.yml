@@ -1,0 +1,52 @@
+version: "3.8"
+
+networks:
+  main:
+
+services:
+  app:
+    image: ${DOCKER_USERNAME}/csharptwit-${STAGE}
+    networks:
+      - main
+    ports:
+      - target: 8080
+        published: 5000
+    environment:
+      - ConnectionStrings__DefaultConnection=${ConnectionStrings__DefaultConnection}
+    deploy:
+      replicas: 2
+      update_config:
+        parallelism: 1
+        delay: 10s
+        order: start-first
+      restart_policy:
+        condition: on-failure
+
+  prometheus:
+    image: prom/prometheus
+    volumes:
+      - type: bind
+        source: ./prometheus.yml
+        target: /etc/prometheus/prometheus.yml
+        read_only: true
+    ports:
+      - target: 9090
+        published: 9090
+    networks:
+      - main
+    deploy:
+      replicas: 1
+      update_config:
+        parallelism: 1
+        delay: 10s
+      restart_policy:
+        condition: on-failure
+      placement:
+        constraints:
+          - node.role == manager
+    # This extra host is the one being scrapped by Prometheus
+    # It is required so the scrapping endpoint is mapped to the name of the app's Docker image name and not to the containers changing ID
+      # extra_hosts:
+      #   - "csharp-minitwit:host-gateway"
+
+  # docker stack deploy --compose-file compose.yml stackdemo
