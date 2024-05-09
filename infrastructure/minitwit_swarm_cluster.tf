@@ -15,6 +15,7 @@ resource "digitalocean_droplet" "minitwit-swarm-leader" {
   image = "docker-20-04"
   name = "minitwit-swarm-leader-${var.STAGE}"
   region = var.region
+  monitoring = true
   size = "s-1vcpu-1gb"
   # add public ssh key so we can access the machine
   ssh_keys = [digitalocean_ssh_key.minitwit.fingerprint]
@@ -31,11 +32,6 @@ resource "digitalocean_droplet" "minitwit-swarm-leader" {
   provisioner "file" {
     source = "stack/minitwit_stack.yml"
     destination = "/root/minitwit_stack.yml"
-  }
-
-  provisioner "file" {
-    source = "stack/prometheus.yml"
-    destination = "/root/prometheus.yml"
   }
 
   provisioner "remote-exec" {
@@ -63,16 +59,17 @@ resource "null_resource" "swarm-worker-token" {
 
   # save the worker join token
   provisioner "local-exec" {
-    command = "ssh -o 'ConnectionAttempts 3600' -o 'StrictHostKeyChecking no' root@${digitalocean_droplet.minitwit-swarm-leader.ipv4_address} -i ssh_key/terraform 'docker swarm join-token worker -q' > temp/worker_token"
+    command = "ssh -o 'ConnectionAttempts 3600' -o 'StrictHostKeyChecking no' root@${digitalocean_droplet.minitwit-swarm-leader.ipv4_address} -i ssh_key/terraform-${var.STAGE} 'docker swarm join-token worker -q' > temp/worker_token | tee temp/worker_join.log"
   }
 }
 
 resource "null_resource" "swarm-manager-token" {
-  depends_on = [digitalocean_droplet.minitwit-swarm-leader]
+  depends_on = [digitalocean_droplet.minitwit-swarm-leader, null_resource.swarm-worker-token]
   # save the manager join token
   provisioner "local-exec" {
-    command = "ssh -o 'ConnectionAttempts 3600' -o 'StrictHostKeyChecking no' root@${digitalocean_droplet.minitwit-swarm-leader.ipv4_address} -i ssh_key/terraform 'docker swarm join-token manager -q' > temp/manager_token"
+    command = "ssh -o 'ConnectionAttempts 3600' -o 'StrictHostKeyChecking no' root@${digitalocean_droplet.minitwit-swarm-leader.ipv4_address} -i ssh_key/terraform-${var.STAGE} 'docker swarm join-token manager -q' > temp/manager_token | tee temp/manager_join.log"
   }
+
 }
 
 
@@ -93,6 +90,7 @@ resource "digitalocean_droplet" "minitwit-swarm-manager" {
   image = "docker-20-04"
   name = "minitwit-swarm-manager-${var.STAGE}-${count.index}"
   region = var.region
+  monitoring = true
   size = "s-1vcpu-1gb"
   # add public ssh key so we can access the machine
   ssh_keys = [digitalocean_ssh_key.minitwit.fingerprint]
@@ -149,6 +147,7 @@ resource "digitalocean_droplet" "minitwit-swarm-worker" {
   image = "docker-20-04"
   name = "minitwit-swarm-worker-${var.STAGE}-${count.index}"
   region = var.region
+  monitoring = true
   size = "s-1vcpu-1gb"
   # add public ssh key so we can access the machine
   ssh_keys = [digitalocean_ssh_key.minitwit.fingerprint]
