@@ -12,7 +12,7 @@ name: Deploy #shoutout to the exercises session
 on:
   push:
     branches:
-      - 'feature/156-change-workflow-to-a-single-file-+-environments'
+      - 'fix/workflow-eleb'
       - 'develop'
       - 'main'
   workflow_dispatch:
@@ -20,20 +20,23 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    env:
-      ENVIRONMENT: ${{ 
+    # env:
+    #   ENVIRONMENT: ${{ 
+    #     github.ref == 'refs/heads/main' && 'production' ||
+    #     github.ref == 'refs/heads/develop' && 'staging' ||
+    #     github.ref == 'fix/workflow-eleb' && 'staging' }}
+    environment: ${{ 
         github.ref == 'refs/heads/main' && 'production' ||
         github.ref == 'refs/heads/develop' && 'staging' ||
-        github.ref == 'refs/heads/feature/156-change-workflow-to-a-single-file-+-environments' && 'staging' }}
-
+        github.ref == 'fix/workflow-eleb' && 'staging' }}
     steps:
       - name: Check environment
         run: |
-          if [ -z "${ENVIRONMENT}" ]; then
+          if [ -z "${environment}" ]; then
             echo "Environment could not be determined. Exiting."
             exit 1
           else
-            echo "Current environment is $ENVIRONMENT"
+            echo "Current environment is $environment"
           fi
 
       - name: Checkout
@@ -48,15 +51,15 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v1
 
-      - name: Build and push csharptwit-staging
+      - name: Build and push csharptwit to DockerHub
         uses: docker/build-push-action@v2
         with:
           context: ./csharp-minitwit
           file: ./csharp-minitwit/Dockerfile
           push: true
-          tags: ${{ secrets.DOCKER_USERNAME }}/csharptwit-staging:latest
-          cache-from: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/csharptwit-staging:webbuildcache
-          cache-to: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/csharptwit-staging:webbuildcache,mode=max
+          tags: ${{ secrets.DOCKER_USERNAME }}/csharptwit-${ENVIRONMENT}:latest
+          cache-from: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/csharptwit-${ENVIRONMENT}:webbuildcache
+          cache-to: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/csharptwit-${ENVIRONMENT}:webbuildcache,mode=max
           build-args: ENVIRONMENT=Staging
 
       - name: Configure SSH
@@ -65,7 +68,7 @@ jobs:
           echo "$SSH_KEY" > ~/.ssh/staging_key
           chmod 600 ~/.ssh/staging_key
         env:
-          SSH_KEY: ${{ secrets.SSH_KEY_PRE }}
+          SSH_KEY: ${{ secrets.SSH_KEY }}
 
       - name: Copy files to server
         # Updating stack files on remote server from the infrastructure/stack folder
