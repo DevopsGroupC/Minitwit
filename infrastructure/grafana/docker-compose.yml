@@ -1,0 +1,37 @@
+version: '3.8'
+services:
+  grafana:
+    image: grafana/grafana-enterprise
+    container_name: grafana
+    restart: unless-stopped
+    ports:
+      - '3000:3000'
+    volumes:
+      - /mnt/minitwit_data_${STAGE}/grafana:/var/lib/grafana
+    user: root 
+
+  loki:
+    image: grafana/loki:latest
+    command: -config.file=/opt/loki/loki-config.yml
+    restart: unless-stopped
+    volumes:
+      - ./loki-config.yml:/opt/loki/loki-config.yml
+      - /mnt/minitwit_data_${STAGE}/loki:/opt/loki
+    ports:
+      - "3100:3100" 
+    user: root 
+
+
+  prometheus:
+    image: prom/prometheus:latest
+    volumes:
+      - ./targets:/prometheus/targets.json
+      - ./prometheus.yml:/prometheus/prometheus.yml
+      - /mnt/minitwit_data_${STAGE}/prometheus:/prometheus
+    ports:
+      - "9090:9090"
+    command:
+      - "--config.file=./prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--web.enable-lifecycle"
+    user: root 

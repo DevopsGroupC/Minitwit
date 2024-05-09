@@ -634,3 +634,4 @@ infrastructure/ssh_key/*
 infrastructure/.terraform/*
 infrastructure/temp/*
 infrastructure/.terraform*
+infrastructure/grafana/ca_cert
