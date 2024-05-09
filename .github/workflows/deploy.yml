@@ -3,16 +3,15 @@
 # DOCKER_USERNAME
 # DOCKER_PASSWORD
 # SSH_USER = root
-# SSH_KEY_PRE
-# SSH_HOST_PRE
-# DB_CONNECTIONSTRING_STAGING
+# SSH_KEY
+# SSH_LEADER
+# DB_CONNECTIONSTRING
 
-name: Deploy #shoutout to the exercises session
+name: Deploy 
 
 on:
   push:
     branches:
-      - 'fix/workflow-eleb'
       - 'develop'
       - 'main'
 
@@ -31,10 +30,6 @@ jobs:
         if: endsWith(github.ref, '/develop') #if the triggering branch is 'dev'
         run: |
           echo "ENVIRONMENT_NAME=staging" >> $GITHUB_ENV #retrieve secrets from 'staging' environment in Github
-      - name: Check if temp
-        if: endsWith(github.ref, '/fix/workflow-eleb') #if the triggering branch is 'main'
-        run: |
-          echo "ENVIRONMENT_NAME=production" >> $GITHUB_ENV #retrieve secrets from 'production' environment in Github
       - name: Set output
         id: set_env
         run: echo "current_env=${{ env.ENVIRONMENT_NAME }}" >> $GITHUB_OUTPUT #assign the value of ENVIRONMENT_NAME to the output variable 'current_env' 
