@@ -55,13 +55,14 @@ resource "null_resource" "run_docker_compose" {
   # mount the volume 
   provisioner "remote-exec" {
     inline = [
-      "mkdir -p /mnt/minitwit_data",
-      "mount -o discard,defaults,noatime /dev/disk/by-id/scsi-0DO_Volume_minitwit-data /mnt/minitwit_data",
-      "echo '/dev/disk/by-id/scsi-0DO_Volume_minitwit-data /mnt/minitwit_data ext4 defaults,nofail,discard 0 0' | sudo tee -a /etc/fstab",
-      "mkdir -p /mnt/minitwit_data/grafana",
-      "mkdir -p /mnt/minitwit_data/loki",
-      "mkdir -p /mnt/minitwit_data/prometheus",
+      "mkdir -p /mnt/minitwit_data_${var.STAGE}",
+      "mount -o discard,defaults,noatime /dev/disk/by-id/scsi-0DO_Volume_minitwit-data-${var.STAGE} /mnt/minitwit_data_${var.STAGE}",
+      "echo '/dev/disk/by-id/scsi-0DO_Volume_minitwit-data-${var.STAGE} /mnt/minitwit_data_${var.STAGE} ext4 defaults,nofail,discard 0 0' | sudo tee -a /etc/fstab",
+      "mkdir -p /mnt/minitwit_data_${var.STAGE}/grafana",
+      "mkdir -p /mnt/minitwit_data_${var.STAGE}/loki",
+      "mkdir -p /mnt/minitwit_data_${var.STAGE}/prometheus",
       "sed -i 's/__TARGET_IP__/${digitalocean_droplet.minitwit-swarm-leader.ipv4_address}/g' /root/prometheus.yml",
+      "export STAGE=${var.STAGE}",
       "docker compose up -d",
       "until curl -sf http://${digitalocean_droplet.grafana-server.ipv4_address}:3000; do echo 'Waiting for server to respond...'; sleep 5; done"
     ]
