@@ -84,6 +84,7 @@ terraform validate
 # create infrastructure
 echo -e "\n--> Creating Infrastructure\n"
 terraform apply -auto-approve
+# terraform plan
 
 # TODO:
 # # generate loadbalancer configuration

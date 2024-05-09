@@ -15,6 +15,7 @@ resource "digitalocean_droplet" "minitwit-swarm-leader" {
   image = "docker-20-04"
   name = "minitwit-swarm-leader-${var.STAGE}"
   region = var.region
+  monitoring = true
   size = "s-1vcpu-1gb"
   # add public ssh key so we can access the machine
   ssh_keys = [digitalocean_ssh_key.minitwit.fingerprint]
@@ -89,6 +90,7 @@ resource "digitalocean_droplet" "minitwit-swarm-manager" {
   image = "docker-20-04"
   name = "minitwit-swarm-manager-${var.STAGE}-${count.index}"
   region = var.region
+  monitoring = true
   size = "s-1vcpu-1gb"
   # add public ssh key so we can access the machine
   ssh_keys = [digitalocean_ssh_key.minitwit.fingerprint]
@@ -145,6 +147,7 @@ resource "digitalocean_droplet" "minitwit-swarm-worker" {
   image = "docker-20-04"
   name = "minitwit-swarm-worker-${var.STAGE}-${count.index}"
   region = var.region
+  monitoring = true
   size = "s-1vcpu-1gb"
   # add public ssh key so we can access the machine
   ssh_keys = [digitalocean_ssh_key.minitwit.fingerprint]

@@ -4,6 +4,7 @@ resource "digitalocean_droplet" "grafana-server" {
   image   = "docker-20-04"
   name    = "grafana-server-${var.STAGE}"
   region  = var.region
+  monitoring = true
   size    = "s-1vcpu-2gb"
   ssh_keys = [digitalocean_ssh_key.minitwit.fingerprint]
 

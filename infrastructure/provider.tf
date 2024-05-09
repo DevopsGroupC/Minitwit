@@ -12,6 +12,10 @@ variable "pvt_key" {}
 
 # custom exports
 variable "existing_ip" {}
+variable "grafana_ip" {
+        nullable    = true
+        default     = null
+}
 variable "STAGE" {}
 
 #grafana and loki related configs
