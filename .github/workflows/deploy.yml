@@ -15,30 +15,34 @@ on:
       - 'fix/workflow-eleb'
       - 'develop'
       - 'main'
-  workflow_dispatch:
 
 jobs:
+# source: https://magnussundstrom.se/blog/github-action-environment-check
+  set-environment: #this is a job named 'set-environment'
+    runs-on: ubuntu-latest #your preferred OS
+    outputs: #the env value needs to be exposed as an output in order to be reached from other jobs
+      current_env: ${{ steps.set_env.outputs.current_env }} #output variable to store the relevant environment
+    steps:
+      - name: Check if prod
+        if: endsWith(github.ref, '/main') #if the triggering branch is 'main'
+        run: |
+          echo "ENVIRONMENT_NAME=production" >> $GITHUB_ENV #retrieve secrets from 'production' environment in Github
+      - name: Check if develop
+        if: endsWith(github.ref, '/develop') #if the triggering branch is 'dev'
+        run: |
+          echo "ENVIRONMENT_NAME=staging" >> $GITHUB_ENV #retrieve secrets from 'staging' environment in Github
+      - name: Check if temp
+        if: endsWith(github.ref, '/fix/workflow-eleb') #if the triggering branch is 'main'
+        run: |
+          echo "ENVIRONMENT_NAME=production" >> $GITHUB_ENV #retrieve secrets from 'production' environment in Github
+      - name: Set output
+        id: set_env
+        run: echo "::set-output name=current_env::${{ env.ENVIRONMENT_NAME }}" #assign the value of ENVIRONMENT_NAME to the output variable 'current_env' 
   build:
     runs-on: ubuntu-latest
-    # env:
-    #   ENVIRONMENT: ${{ 
-    #     github.ref == 'refs/heads/main' && 'production' ||
-    #     github.ref == 'refs/heads/develop' && 'staging' ||
-    #     github.ref == 'fix/workflow-eleb' && 'staging' }}
-    environment: ${{ 
-        github.ref == 'refs/heads/main' && 'production' ||
-        github.ref == 'refs/heads/develop' && 'staging' ||
-        github.ref == 'fix/workflow-eleb' && 'staging' }}
+    needs: set-environment #this job won't be executed until the set-environment job is finished
+    environment: ${{ needs.set-environment.outputs.current_env }} #this job will now retrieve secret values stored in either 'staging' or 'production' repo environments, depending on the value set in previous job
     steps:
-      - name: Check environment
-        run: |
-          if [ -z "${environment}" ]; then
-            echo "Environment could not be determined. Exiting."
-            exit 1
-          else
-            echo "Current environment is $environment"
-          fi
-
       - name: Checkout
         uses: actions/checkout@v2
 
@@ -57,39 +61,39 @@ jobs:
           context: ./csharp-minitwit
           file: ./csharp-minitwit/Dockerfile
           push: true
-          tags: ${{ secrets.DOCKER_USERNAME }}/csharptwit-${ENVIRONMENT}:latest
-          cache-from: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/csharptwit-${ENVIRONMENT}:webbuildcache
-          cache-to: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/csharptwit-${ENVIRONMENT}:webbuildcache,mode=max
-          build-args: ENVIRONMENT=Staging
+          tags: ${{ secrets.DOCKER_USERNAME }}/csharptwit-${{ needs.set-environment.outputs.current_env }}:latest
+          cache-from: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/csharptwit-${{ needs.set-environment.outputs.current_env }}:webbuildcache
+          cache-to: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/csharptwit-${{ needs.set-environment.outputs.current_env }}:webbuildcache,mode=max
+          build-args: ENVIRONMENT=${{ needs.set-environment.outputs.current_env }}
 
       - name: Configure SSH
         run: |
           mkdir -p ~/.ssh/
-          echo "$SSH_KEY" > ~/.ssh/staging_key
-          chmod 600 ~/.ssh/staging_key
+          echo "$SSH_KEY" > ~/.ssh/ssh_key
+          chmod 600 ~/.ssh/ssh_key
         env:
           SSH_KEY: ${{ secrets.SSH_KEY }}
 
       - name: Copy files to server
         # Updating stack files on remote server from the infrastructure/stack folder
         run: >
-          scp -i ~/.ssh/staging_key -o StrictHostKeyChecking=no
-          ./infrastructure/stack/* $SSH_USER@$SSH_HOST:~/
+          scp -i ~/.ssh/ssh_key -o StrictHostKeyChecking=no
+          ./infrastructure/stack/* $SSH_USER@$SSH_LEADER:~/
         env:
           SSH_USER: ${{ secrets.SSH_USER }}
-          SSH_HOST: ${{ secrets.SSH_HOST_PRE }}
+          SSH_LEADER: ${{ secrets.SSH_LEADER }}
 
       - name: Deploy to server
         # Pulls minitwit image from Docker Hub and updates the swarm
         run: |
-          ssh -i ~/.ssh/staging_key -o StrictHostKeyChecking=no $SSH_USER@$SSH_HOST << 'EOF'
-            export ConnectionStrings__DefaultConnection=${{ secrets.DB_CONNECTIONSTRING_STAGING }}
+          ssh -i ~/.ssh/ssh_key -o StrictHostKeyChecking=no $SSH_USER@$SSH_LEADER << 'EOF'
+            export ConnectionStrings__DefaultConnection=${{ secrets.DB_CONNECTIONSTRING }}
             export DOCKER_USERNAME=${{ secrets.DOCKER_USERNAME }}
-            export STAGE=staging
+            export STAGE=${{ needs.set-environment.outputs.current_env }}
 
             echo "Deploying stack 'minitwit'..."
             docker stack deploy --compose-file minitwit_stack.yml minitwit
           EOF
         env:
           SSH_USER: ${{ secrets.SSH_USER }}
-          SSH_HOST: ${{ secrets.SSH_HOST_PRE }}
+          SSH_LEADER: ${{ secrets.SSH_LEADER }}
