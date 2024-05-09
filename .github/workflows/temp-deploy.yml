@@ -48,7 +48,7 @@ jobs:
           echo "$SSH_KEY" > ~/.ssh/staging_key
           chmod 600 ~/.ssh/staging_key
         env:
-          SSH_KEY: ${{ secrets.SSH_KEY_PRE }}
+          SSH_KEY: ${{ secrets.SSH_KEY}}
 
       - name: Copy files to server
         # Updating stack files on remote server from the infrastructure/stack folder
