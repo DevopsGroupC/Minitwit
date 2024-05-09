@@ -87,12 +87,12 @@ jobs:
         # Pulls minitwit image from Docker Hub and updates the swarm
         run: |
           ssh -i ~/.ssh/ssh_key -o StrictHostKeyChecking=no $SSH_USER@$SSH_LEADER << 'EOF'
-            export ConnectionStrings__DefaultConnection=${{ secrets.DB_CONNECTIONSTRING }}
-            export DOCKER_USERNAME=${{ secrets.DOCKER_USERNAME }}
-            export STAGE=${{ needs.set-environment.outputs.current_env }}
+            export ConnectionStrings__DefaultConnection='${{ secrets.DB_CONNECTIONSTRING }}'
+            export DOCKER_USERNAME='${{ secrets.DOCKER_USERNAME }}'
+            export STAGE='${{ needs.set-environment.outputs.current_env }}'
 
             echo "Deploying stack 'minitwit'..."
-            docker stack deploy --compose-file minitwit_stack.yml minitwit
+            docker stack deploy minitwit -c minitwit_stack.yml
           EOF
         env:
           SSH_USER: ${{ secrets.SSH_USER }}
