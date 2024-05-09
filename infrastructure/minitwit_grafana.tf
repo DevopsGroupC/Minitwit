@@ -17,18 +17,25 @@ resource "digitalocean_droplet" "grafana-server" {
   }
 
   provisioner "file" {
-    source = "grafana_dashboards/docker-compose.yml"
+    source = "grafana/docker-compose.yml"
     destination = "/root/docker-compose.yml"
   }
 
   provisioner "file" {
-    source = "grafana_dashboards/loki-config.yml"
+    source = "grafana/loki-config.yml"
     destination = "/root/loki-config.yml"
+  }
+
+  provisioner "file" {
+    source = "grafana/prometheus.yml"
+    destination = "/root/prometheus.yml"
   }
 
   provisioner "remote-exec" {
     inline = [
-      "ufw allow 3000"
+      "ufw allow 3000",
+      "ufw allow 3100",
+      "ufw allow 9090"
     ]
   }
 }
@@ -52,20 +59,16 @@ resource "null_resource" "run_docker_compose" {
       "echo '/dev/disk/by-id/scsi-0DO_Volume_minitwit-data /mnt/minitwit_data ext4 defaults,nofail,discard 0 0' | sudo tee -a /etc/fstab",
       "mkdir -p /mnt/minitwit_data/grafana",
       "mkdir -p /mnt/minitwit_data/loki",
+      "mkdir -p /mnt/minitwit_data/prometheus",
+      "sed -i 's/__TARGET_IP__/${digitalocean_droplet.minitwit-swarm-leader.ipv4_address}/g' /root/prometheus.yml",
       "docker compose up -d",
+      "until curl -sf http://${digitalocean_droplet.grafana-server.ipv4_address}:3000; do echo 'Waiting for server to respond...'; sleep 5; done"
     ]
   }
 }
 
-
-# TODO: the above website shows that i can connect to grafana via terraform and add datasources
-# Add sql datasource
-# Add minitwit prometheus datasource
-# Add loki datasource (before adding loki datasource, we must also configure loki)
-
-
 #source: https://registry.terraform.io/providers/grafana/grafana/latest/docs/resources/data_source
-resource "grafana_data_source" "database1" {
+resource "grafana_data_source" "database" {
   depends_on          = [null_resource.run_docker_compose]
   type                = "postgres"
   name                = "minitwit-database"
@@ -75,11 +78,12 @@ resource "grafana_data_source" "database1" {
   username            = var.database_user
   secure_json_data_encoded = jsonencode({
     password = var.database_pwd
-    tlsClientCert = "" # TODO: add ssl cert in secrets
+    tlsCACert = file(var.CA_cert_path)
   })
 
-  json_data_encoded = jsonencode({
-    sslmode          = "require"
+  json_data_encoded           = jsonencode({
+    sslmode                   = "verify-ca"
+    "tlsConfigurationMethod"  = "file-content"
     maxOpenConns = 4
     maxIdleConns = 4
   })
@@ -90,7 +94,7 @@ resource "grafana_data_source" "prometheus" {
   type                = "prometheus"
   name                = "minitwit"
   uid                 = "cdhtgakl62xhce"
-  url                 = "http://${digitalocean_droplet.minitwit-swarm-leader.ipv4_address}:9090" 
+  url                 = "http://${digitalocean_droplet.grafana-server.ipv4_address}:9090" 
 }
 
 resource "grafana_data_source" "loki" {
@@ -101,16 +105,10 @@ resource "grafana_data_source" "loki" {
   access_mode         = "proxy"
 }
 
-resource "grafana_folder" "minitwit_folder" {
-  depends_on          = [null_resource.run_docker_compose]
-  title               = "Minitwit"
-  uid                 = "minitwit-uid"
-}
-
 resource "grafana_dashboard" "minitwit_dashboard" {
-# depends_on          = [null_resource.run_docker_compose, grafana_data_source.database, grafana_data_source.prometheus, grafana_data_source.loki, grafana_folder.minitwit_folder] #should Loki be added here??? I have added it
-  folder              = grafana_folder.minitwit_folder.uid
-  config_json         = file("${path.module}/grafana_dashboards/dashboard.json")
+  depends_on          = [null_resource.run_docker_compose]
+  config_json         = file("${path.module}/grafana/dashboard.json")
+  overwrite           = true
 }
 
 resource "grafana_organization_preferences" "test" {

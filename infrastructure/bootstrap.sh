@@ -41,6 +41,14 @@ echo -e "\n--> Checking that environment variables are set\n"
 [ -z "$DOCKER_USERNAME" ] && echo "DOCKER_USERNAME is not set" && exit
 [ -z "$ConnectionStrings__DefaultConnection" ] && echo "ConnectionStrings__DefaultConnection is not set" && exit
 
+echo -e "\n--> Checking that environment variables for monitoring server are set\n"
+[ -z "$TF_VAR_grafana_auth" ] && echo "TF_VAR_grafana_auth is not set" && exit
+[ -z "$TF_VAR_database_name" ] && echo "TF_VAR_database_name is not set" && exit
+[ -z "$TF_VAR_database_user" ] && echo "TF_VAR_database_user is not set" && exit
+[ -z "$TF_VAR_database_pwd" ] && echo "TF_VAR_database_pwd is not set" && exit
+[ -z "$TF_VAR_database_url" ] && echo "TF_VAR_database_pwd is not set" && exit
+[ -z "$TF_VAR_CA_cert_path" ] && echo "TF_VAR_database_pwd is not set" && exit
+
 mkdir -p temp
 mkdir -p ssh_key
 
@@ -65,6 +73,9 @@ terraform init \
     -backend-config "key=$STATE_FILE" \
     -backend-config "access_key=$AWS_ACCESS_KEY_ID" \
     -backend-config "secret_key=$AWS_SECRET_ACCESS_KEY"
+
+echo -e "\n--> Creating/selecting terraform workspace\n"
+terraform workspace select $1 || terraform workspace new $1
 
 # check that everything looks good
 echo -e "\n--> Validating terraform configuration\n"
@@ -97,5 +108,6 @@ ssh \
 
 echo -e "\n--> Done bootstrapping Minitwit"
 echo -e "--> Site will be available @ http://$(terraform output -raw public_ip)"
-echo -e "--> ssh to swarm leader with 'ssh root@\$(terraform output -raw minitwit-swarm-leader-ip-address) -i ssh_key/terraform'"
+echo -e "--> Monitoring site will be available @ http://$(terraform output -raw grafana-server-ip-address)"
+echo -e "--> ssh to swarm leader with 'ssh root@$(terraform output -raw minitwit-swarm-leader-ip-address) -i ssh_key/terraform'"
 echo -e "--> To remove the infrastructure run: terraform destroy -auto-approve"

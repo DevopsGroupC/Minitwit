@@ -20,6 +20,7 @@ variable "database_name" {}
 variable "database_user" {}
 variable "database_pwd" {}
 variable "database_url" {}
+variable "CA_cert_path" {}
 
 # setup the provider
 terraform {

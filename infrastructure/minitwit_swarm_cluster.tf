@@ -33,11 +33,6 @@ resource "digitalocean_droplet" "minitwit-swarm-leader" {
     destination = "/root/minitwit_stack.yml"
   }
 
-  provisioner "file" {
-    source = "stack/prometheus.yml"
-    destination = "/root/prometheus.yml"
-  }
-
   provisioner "remote-exec" {
     inline = [
       # allow ports for docker swarm
@@ -63,16 +58,17 @@ resource "null_resource" "swarm-worker-token" {
 
   # save the worker join token
   provisioner "local-exec" {
-    command = "ssh -o 'ConnectionAttempts 3600' -o 'StrictHostKeyChecking no' root@${digitalocean_droplet.minitwit-swarm-leader.ipv4_address} -i ssh_key/terraform-${var.STAGE} 'docker swarm join-token worker -q' > temp/worker_token"
+    command = "ssh -o 'ConnectionAttempts 3600' -o 'StrictHostKeyChecking no' root@${digitalocean_droplet.minitwit-swarm-leader.ipv4_address} -i ssh_key/terraform-${var.STAGE} 'docker swarm join-token worker -q' > temp/worker_token | tee temp/worker_join.log"
   }
 }
 
 resource "null_resource" "swarm-manager-token" {
-  depends_on = [digitalocean_droplet.minitwit-swarm-leader]
+  depends_on = [digitalocean_droplet.minitwit-swarm-leader, null_resource.swarm-worker-token]
   # save the manager join token
   provisioner "local-exec" {
-    command = "ssh -o 'ConnectionAttempts 3600' -o 'StrictHostKeyChecking no' root@${digitalocean_droplet.minitwit-swarm-leader.ipv4_address} -i ssh_key/terraform-${var.STAGE} 'docker swarm join-token manager -q' > temp/manager_token"
+    command = "ssh -o 'ConnectionAttempts 3600' -o 'StrictHostKeyChecking no' root@${digitalocean_droplet.minitwit-swarm-leader.ipv4_address} -i ssh_key/terraform-${var.STAGE} 'docker swarm join-token manager -q' > temp/manager_token | tee temp/manager_join.log"
   }
+
 }
 
 

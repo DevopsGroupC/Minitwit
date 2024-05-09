@@ -13,9 +13,25 @@ services:
   loki:
     image: grafana/loki:latest
     command: -config.file=/opt/loki/loki-config.yml
+    restart: unless-stopped
     volumes:
       - ./loki-config.yml:/opt/loki/loki-config.yml
       - /mnt/minitwit_data/loki:/opt/loki
     ports:
       - "3100:3100" 
     user: root # Set user to root
+
+
+  prometheus:
+    image: prom/prometheus:latest
+    volumes:
+      - ./targets:/prometheus/targets.json
+      - ./prometheus.yml:/prometheus/prometheus.yml
+      - /mnt/minitwit_data/prometheus:/prometheus
+    ports:
+      - "9090:9090"
+    command:
+      - "--config.file=./prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--web.enable-lifecycle"
+    user: root # Set user to root  

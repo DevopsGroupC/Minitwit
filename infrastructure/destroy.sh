@@ -51,11 +51,17 @@ terraform init \
     -backend-config "access_key=$AWS_ACCESS_KEY_ID" \
     -backend-config "secret_key=$AWS_SECRET_ACCESS_KEY"
 
+echo -e "\n--> Creating/selecting terraform workspace\n"
+terraform workspace select $1 || terraform workspace new $1
     
-# # Remove infrastructure
-# echo -e "\n--> Removing Infrastructure\n"
-# terraform destroy -auto-approve
+# Remove infrastructure
+echo -e "\n--> Removing Infrastructure\n"
+terraform destroy -auto-approve
+
+# Delete terraform workspace
+terraform workspace select default
+terraform workspace delete $1
 
 ## OPTIONAL: Destroys a target resource:
 ## Comment out the resource above when using this one:
-terraform destroy --target digitalocean_droplet.grafana-server
+# terraform destroy --target digitalocean_droplet.grafana-server
