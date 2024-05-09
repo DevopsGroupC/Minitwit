@@ -37,26 +37,26 @@ jobs:
           echo "ENVIRONMENT_NAME=production" >> $GITHUB_ENV #retrieve secrets from 'production' environment in Github
       - name: Set output
         id: set_env
-        run: echo "::set-output name=current_env::${{ env.ENVIRONMENT_NAME }}" #assign the value of ENVIRONMENT_NAME to the output variable 'current_env' 
+        run: echo "current_env=${{ env.ENVIRONMENT_NAME }}" >> $GITHUB_OUTPUT #assign the value of ENVIRONMENT_NAME to the output variable 'current_env' 
   build:
     runs-on: ubuntu-latest
     needs: set-environment #this job won't be executed until the set-environment job is finished
     environment: ${{ needs.set-environment.outputs.current_env }} #this job will now retrieve secret values stored in either 'staging' or 'production' repo environments, depending on the value set in previous job
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Login to Docker Hub
-        uses: docker/login-action@v1
+        uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v1
+        uses: docker/setup-buildx-action@v3
 
       - name: Build and push csharptwit to DockerHub
-        uses: docker/build-push-action@v2
+        uses: docker/build-push-action@v5
         with:
           context: ./csharp-minitwit
           file: ./csharp-minitwit/Dockerfile
