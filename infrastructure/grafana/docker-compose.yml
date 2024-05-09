@@ -7,8 +7,8 @@ services:
     ports:
       - '3000:3000'
     volumes:
-      - /mnt/minitwit_data/grafana:/var/lib/grafana
-    user: root #might not be ideal, maybe it would be better to give the right permissions in the grafana terraform file
+      - /mnt/minitwit_data_${STAGE}/grafana:/var/lib/grafana
+    user: root 
 
   loki:
     image: grafana/loki:latest
@@ -16,10 +16,10 @@ services:
     restart: unless-stopped
     volumes:
       - ./loki-config.yml:/opt/loki/loki-config.yml
-      - /mnt/minitwit_data/loki:/opt/loki
+      - /mnt/minitwit_data_${STAGE}/loki:/opt/loki
     ports:
       - "3100:3100" 
-    user: root # Set user to root
+    user: root 
 
 
   prometheus:
@@ -27,11 +27,11 @@ services:
     volumes:
       - ./targets:/prometheus/targets.json
       - ./prometheus.yml:/prometheus/prometheus.yml
-      - /mnt/minitwit_data/prometheus:/prometheus
+      - /mnt/minitwit_data_${STAGE}/prometheus:/prometheus
     ports:
       - "9090:9090"
     command:
       - "--config.file=./prometheus.yml"
       - "--storage.tsdb.path=/prometheus"
       - "--web.enable-lifecycle"
-    user: root # Set user to root  
+    user: root 
