@@ -70,7 +70,7 @@ These environment variables should be set in `secrets-production` or `secrets-st
 #### 3. Using `bootstrap.sh` to Deploy Infrastructure
 1. **Prepare Environment Variables:**
     - Set the necessary environment variables as the script checks these before proceeding.
-    - Configure `secrets` or `secrets.staging` files to load environment-specific variables. the files must be saved in the same directory as `bootstrap.sh`
+    - Configure `secrets-production` or `secrets-staging` files to load environment-specific variables. the files must be saved in the same directory as `bootstrap.sh`
 1. **Run the Script:**
     - Execute `bash bootstrap.sh production` or `bash bootstrap.sh staging` depending on the target environment.
     - The script will initialize Terraform, validate configurations, and apply them to create the infrastructure. It also handles SSH key generation if SSH keys are missing/not provided.
