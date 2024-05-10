@@ -628,8 +628,10 @@ $RECYCLE.BIN/
 # Vim temporary swap files
 *.swp
 
+# Infrastructure related
 csharp-minitwit/Databases/minitwit.db
-infrastructure/secrets*
+infrastructure/secrets-production
+infrastructure/secrets-staging
 infrastructure/ssh_key/*
 infrastructure/.terraform/*
 infrastructure/temp/*

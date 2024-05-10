@@ -82,6 +82,14 @@ jobs:
         # Pulls minitwit image from Docker Hub and updates the swarm
         run: |
           ssh -i ~/.ssh/ssh_key -o StrictHostKeyChecking=no $SSH_USER@$SSH_LEADER << 'EOF'
+            
+            current_env="${{ needs.set-environment.outputs.current_env }}"
+            case "$current_env" in 
+              production) export STAGE="Production" ;;
+              staging) export STAGE="Staging" ;;
+              *) echo "Unknown environment: $current_env" >&2; exit 1 ;;
+            esac
+            
             export ConnectionStrings__DefaultConnection='${{ secrets.DB_CONNECTIONSTRING }}'
             export DOCKER_USERNAME='${{ secrets.DOCKER_USERNAME }}'
             export STAGE='${{ needs.set-environment.outputs.current_env }}'
