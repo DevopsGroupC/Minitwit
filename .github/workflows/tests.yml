@@ -9,22 +9,39 @@ on:
     types: [opened, reopened, edited, synchronize, ready_for_review] 
 
 jobs:
+  build-image:
+      runs-on: ubuntu-latest
+      steps:
+        - name: Checkout repo
+          uses: actions/checkout@v4
+        
+        - name: Build Docker image
+          run: docker build -t csharp-minitwit:latest ./csharp-minitwit
+
+        - name: Wait 5 seconds
+          run: sleep 5
+
   run-tests:
+    needs: build-image
     runs-on: ubuntu-latest
+    services:
+      csharp-minitwit:
+        image: csharp-minitwit:latest
+        ports:
+          - 5000:5000
+        options: --detach
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Wait for docker
-        run:
-            sleep 5
-
-      - name: Build Docker image
-        run: docker build -t csharp-minitwit:latest ./csharp-minitwit
-
-      - name: Run Docker container
+      - name: Check Public Endpoint
         run: |
-          docker run -d --name csharp-minitwit-container -p 5000:5000 csharp-minitwit:latest
+          response=$(curl -v http://localhost:5000/public)
+          echo "Response: $response"
+
+      - name: Print Docker Logs
+        if: ${{ failure() }}
+        run: docker logs csharp-minitwit-container
 
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -36,15 +53,6 @@ jobs:
           cd ./csharp-minitwit/Tests
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-
-      - name: Check Public Endpoint
-        run: |
-          response=$(curl -v http://localhost:5000/public)
-          echo "Response: $response"
-
-      - name: Print Docker Logs
-        if: ${{ failure() }}
-        run: docker logs csharp-minitwit-container
 
       - name: Run Python tests
         run: |
