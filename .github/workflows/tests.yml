@@ -56,5 +56,5 @@ jobs:
 
       - name: Clean up
         run: |
-          docker stop csharp-minitwit-container
-          docker rm csharp-minitwit-container
+          docker stop csharp-minitwit
+          docker rm csharp-minitwit
