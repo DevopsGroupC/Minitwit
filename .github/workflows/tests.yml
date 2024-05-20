@@ -31,18 +31,17 @@ jobs:
         with:
           python-version: '3.x'
 
-      - name: Wait for the service to be up
-        run:
-            sleep 10
-
       - name: Install Python dependencies
         run: |
+          cd ./csharp-minitwit/Tests
           python -m pip install --upgrade pip
+          pip install -r requirements.txt
 
       - name: Run Python tests
         run: |
-          pytest Tests/minitwit_sim_api_test.py
-          pytest Tests/refactored_minitwit_tests.py
+          cd ./csharp-minitwit/Tests
+          pytest minitwit_sim_api_test.py
+          pytest refactored_minitwit_tests.py
 
       - name: Clean up
         run: |
