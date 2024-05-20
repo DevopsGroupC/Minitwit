@@ -45,6 +45,10 @@ jobs:
             exit 1
           fi
 
+      - name: Print Docker Logs
+        if: ${{ failure() }}
+        run: docker logs csharp-minitwit-container
+
       - name: Run Python tests
         run: |
           cd ./csharp-minitwit/Tests
