@@ -1,32 +1,30 @@
 name: Run Tests
+# on:
+#   workflow_run:
+#     workflows: ["Format Check"]
+#     types:
+#       - completed
 on:
-  workflow_run:
-    workflows: ["Format Check"]
-    types:
-      - completed
+  pull_request:
+    types: [opened, reopened, edited, synchronize, ready_for_review] 
 
 jobs:
   run-tests:
     runs-on: ubuntu-latest
-    services:
-      app:
-        image: csharp-minitwit:latest
-        options: --health-cmd='curl -f http://localhost:5000/public || exit 1' --health-interval=10s --health-retries=3 --health-start-period=30s --health-timeout=10s
-        ports:
-          - 5000:5000
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
 
+      - name: Wait for docker
+        run:
+            sleep 5
+
       - name: Build Docker image
         run: docker build -t csharp-minitwit:latest ./csharp-minitwit
 
-      - name: Wait for the service to be healthy
+      - name: Run Docker container
         run: |
-          until [ "$(docker inspect --format='{{.State.Health.Status}}' app)" == "healthy" ]; do
-            echo "Waiting for Docker service to be healthy..."
-            sleep 5
-          done
+          docker run -d --name csharp-minitwit -p 5000:8080 csharp-minitwit:latest
 
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -35,12 +33,28 @@ jobs:
 
       - name: Install Python dependencies
         run: |
+          cd ./csharp-minitwit/Tests
           python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Check Docker Logs
+        run: docker logs csharp-minitwit
+
+      - name: Check Public Endpoint
+        run: |
+          status_code=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:5000/public)
+          if [ "$status_code" -ne 200 ]; then
+            echo "Error: $status_code"
+            exit 1
+          fi
 
       - name: Run Python tests
-        env:
-          BASE_URL: http://localhost:5000
         run: |
-          cd ./Tests
+          cd ./csharp-minitwit/Tests
           pytest minitwit_sim_api_test.py
           pytest refactored_minitwit_tests.py
+
+      - name: Clean up
+        run: |
+          docker stop csharp-minitwit
+          docker rm csharp-minitwit
