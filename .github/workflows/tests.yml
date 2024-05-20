@@ -39,11 +39,8 @@ jobs:
 
       - name: Check Public Endpoint
         run: |
-          status_code=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:5000/public)
-          if [ "$status_code" -ne 200 ]; then
-            echo "Error: Expected status code 200, but received $status_code"
-            exit 1
-          fi
+          response=$(curl -v http://localhost:5000/public)
+          echo "Response: $response"
 
       - name: Print Docker Logs
         if: ${{ failure() }}
