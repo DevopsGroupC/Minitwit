@@ -15,6 +15,10 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
+      - name: Wait for docker
+        run:
+            sleep 5
+
       - name: Build Docker image
         run: docker build -t csharp-minitwit:latest ./csharp-minitwit
 
@@ -38,9 +42,8 @@ jobs:
 
       - name: Run Python tests
         run: |
-          cd ./Tests
-          pytest minitwit_sim_api_test.py
-          pytest refactored_minitwit_tests.py
+          pytest Tests/minitwit_sim_api_test.py
+          pytest Tests/refactored_minitwit_tests.py
 
       - name: Clean up
         run: |

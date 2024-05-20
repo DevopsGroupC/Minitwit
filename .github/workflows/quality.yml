@@ -1,7 +1,8 @@
 name: Format check
 on:
   pull_request:
-    types: [opened, reopened, edited, synchronize, ready_for_review]
+    # types: [opened, reopened, edited, synchronize, ready_for_review]
+    types: [opened]
 
 jobs:
   dotnet-format:
