@@ -13,6 +13,7 @@ __pycache__/
 .vagrant
 .Python
 build/
+!report/build/
 develop-eggs/
 dist/
 downloads/
@@ -637,3 +638,4 @@ infrastructure/.terraform/*
 infrastructure/temp/*
 infrastructure/.terraform*
 infrastructure/grafana/ca_cert
+infrastructure/secrets
