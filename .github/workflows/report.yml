@@ -47,10 +47,11 @@ jobs:
 
           echo "git status:"
           git status
-          
-          git submodule update --remote --rebase
 
-          echo "git status after submodule update:"
+          git checkout main
+          git pull origin main
+
+          echo "git status after pull:"
           git status
           
           git add build/main.pdf
