@@ -44,6 +44,19 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 
 if (builder.Environment.IsDevelopment())
 {
+    string filePath = connectionString!.Split('=')[1];
+    string? directoryPath = Path.GetDirectoryName(filePath);
+
+    if (!Directory.Exists(directoryPath))
+    {
+        Directory.CreateDirectory(directoryPath);
+    }
+
+    if (!File.Exists(filePath))
+    {
+        File.Create(filePath).Close();
+    }
+
     builder.Services.AddDbContext<MinitwitContext>(options =>
         options.UseSqlite(connectionString));
 }

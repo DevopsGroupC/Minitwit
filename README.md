@@ -10,96 +10,64 @@
     <li>
       <a href="#about-the-project">About The Project</a>
       <ul>
-        <li><a href="#built-with">Built With</a></li>
+        <li><a href="#the-application">The application</a></li>
         <li><a href="#prerequisites">Prerequisites</a></li>
       </ul>
     </li>
     <li>
-      <a href="#usage">Running the project</a>
+      <a href="#running-the-project">Running the project</a>
       <ul>
-        <li><a href="#itu-minitwit">itu-minitwit</a></li>
-        <ul>
-          <li><a href="#itu-minitwit-tests">Tests</a></li>
-        </ul>
-        <li><a href="#csharp-minitwit">csharp-minitwit</a></li>
-        <ul>
-          <li><a href="#csharp-minitwit-tests">Tests</a></li>
-        </ul>
+        <li><a href="#run-using-docker-the-prefered-method">Using docker (the prefered method)</a></li>
+        <li><a href="#run-using-the-dotnet-runtime-directly">Using the dotnet runtime directly</a></li>
+        <li><a href="#monitoring">Monitoring</a></li>
+        <li><a href="#testing">Testing</a></li>
       </ul>
     </li>
-    <li><a href="#Acknowledgments">Acknowledgments</a></li>
+    <li><a href="#how-to-contribute">How to contribute</a></li>
+    <li><a href="#acknowledgments">Acknowledgments</a></li>
   </ol>
 </details>
 
 ## About The Project
 This project is part of the course [DevOps, Software Evolution and Software Maintenance, MSc (Spring 2024)](https://learnit.itu.dk/local/coursebase/view.php?ciid=1391)
 
-The project currently consists of two folders:
-- **itu-minitwit**, which is a small Twitter copy made in Python.
+The project currently consists of three main folders:
 - **csharp-minitwit**, which is a ported version of itu-minitwit, made in C#.
+- **infrastructure**, Containing shell and Terraform scripts for provisioning.
+- **report**, Containing a report written in LaTex, generated as a pdf in the build folder.
 
-### Built With
-- .Net 8
-- ASP.NET
-- SQLite
+
+### The application
+The 'csharp-minitwit' application is a miniature version of X (formerly known as Twitter). 
 
 ### Prerequisites
-  * A modern Python, i.e., version >= 3.10,
-    - There are various ways of installing it, either via the system's package manager (`apt search python3`)
-    - manually from [python.org](https://www.python.org/downloads/)
-    - via [pyenv](https://github.com/pyenv/pyenv)
-    - via [Anaconda](https://www.anaconda.com/products/individual)
-  * The Python dependencies from `itu-minitwit`:
-    - [Flask](https://flask.palletsprojects.com/en/3.0.x/) >= version 3.0.0
-    - [Werkzeug](https://palletsprojects.com/p/werkzeug/) >= version 3.0.0
-    - [Jinja2](https://palletsprojects.com/p/jinja/) >= version 3.0.0
-  * A current C compiler, e.g., `gcc`
-    - Likely it is already part of your Linux installation.
-    - You can check that, for example with:
-    ```bash
-    gcc --version
-    ```
-    - Since the `flag_tool` is a C program, you have to compile it again:
-      * `flag_tool` includes `sqlite3.h`, which is likely not yet installed on your system.
-      * It can be installed (together with the required shared library) via:
-      ```bash
-      sudo apt install libsqlite3-dev
-      ```
-  * To work with the database, you likely need [`sqlite3`](https://sqlite.org/index.html) ((`apt search sqlite3`))
-    - To inspect the database file while refactoring, you might want to use a tool to "look into" your database file, such as the [DB Browser for SQLite](https://sqlitebrowser.org/), which you can install via:
-    ```bash
-    sudo apt install sqlitebrowser
-    ```
-
+* Linux. It is also possible to work on the project using MacOS, Windows has a few Git issues with the 'infrastructure/secrets:Zone.Identifier' file.
 * The [.NET 8.0 SDK](https://dotnet.microsoft.com/en-us/download/dotnet/8.0). There are multiple options for downloading depending on your operating system. If on linux, we recommend the  [scripted install](https://learn.microsoft.com/en-us/dotnet/core/install/linux-scripted-manual#scripted-install).
+* SQLite, multiple guides can be found online on how to install, this highly depends on which operating system is used.
+* [Docker](https://docs.docker.com/engine/install/)
+* Python with the pytest and request pip-packages installed (only needed for testing).
 
 <!-- USAGE EXAMPLES -->
-## Usage
+## Running the project
+This project can be run in two ways:
 
-### itu-minitwit
-This project can be run using a terminal.
-cd into the correct folder:
+### Run using docker (the prefered method):
+Run using `docker` - runs only the app:
 ```sh
-cd itu-minitwit
+docker build -t csharp-minitwit .
+docker run -p 5000:8080 csharp-minitwit
 ```
-Run using `Python`:
+At this point, the application can be accessed using the link provided in the terminal (http://localhost:5000).
+
+Run using `docker-compose` - runs multiple development services, such as Prometheus, Grafana, etc.:
 ```sh
-python minitwit.py
+docker-compose up
 ```
 
-#### itu-minitwit tests
-Tests for `itu-minitwit` can be run by opening a new terminal and cd into correct folder:
-```sh
-cd itu-minitwit
-```
-And running the tests using `Pytest`:
-```sh
-pytest minitwit_tests.py
-```
-At this point, the application can be accessed using the link provided in the terminal (http://127.0.0.1:5000).
+### Run using the dotnet runtime directly:
+This firstly requires a few changes to the code. The default connection string points to a folder which will be generated in the docker container normally. 
+Change the connection string in 'appsettings.Development.json', from 'Data Source=/app/Databases/volume/minitwit.db' to 'Data Source=./Databases/volume/minitwit.db' ***DO NOT COMMIT THIS***.
 
-### csharp-minitwit
-This project can be run using a terminal.
 cd into the correct folder:
 ```sh
 cd csharp-minitwit
@@ -108,17 +76,8 @@ Run using `dotnet`:
 ```sh
 dotnet run
 ```
-Run using `docker` - runs only the app:
-```sh
-docker build -t csharp-minitwit .
-docker run -p 5000:8080 csharp-minitwit
-```
-At this point, the application can be accessed using the link provided in the terminal (http://localhost:5000). Furthermore, API documentation can be accessed at http://localhost:5000/swagger.
 
-Run using `docker-compose` - runs multiple development services, such as Prometheus, Grafana, etc.:
-```sh
-docker-compose up
-```
+
 
 ### Monitoring
 | Service    | Endpoint |
@@ -128,16 +87,26 @@ docker-compose up
 | Grafana    | http://localhost:3000    |
 
 
-#### csharp-minitwit tests
-Tests for `csharp-minitwit` can be run by opening a new terminal and cd into the test folder:
+### Testing
+When developing APIs locally, Swagger is setup at http://localhost:5000/swagger/index.html for easy manual testing.
+
+Unit tests for `csharp-minitwit` can be run by opening a new terminal and cd into the test folder:
 ```sh
 cd csharp-minitwit/Tests
 ```
 And running the tests using Pytest:
 ```sh
 pytest refactored_minitwit_tests.py
+pytest minitwit_sim_api_test.py
 ```
+
+## How to contribute
+For this repository we try to follow the [GitFlow](https://www.atlassian.com/git/tutorials/comparing-workflows/gitflow-workflow) workflow:
+* Create an issue
+* Create a branch using the GitHub issue tracker to ensure correct naming (remember to prefix the branch name with feature/{issue_name})
+* Develop feature
+* Create a pull request
 
 <!-- ACKNOWLEDGMENTS -->
 ## Acknowledgments
-Shout out to Chatgpt for help with debugging.
+Shout out to [ChatGPT](https://chatgpt.com/) for help with debugging.

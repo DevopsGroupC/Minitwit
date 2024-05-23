@@ -1,0 +1,86 @@
+name: Build Report
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build_latex:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          ssh-key: ${{ secrets.DEPLOY_KEY_FOR_REPORT_PRIVATE }}
+
+      - name: Update submodules
+        run: |
+          git submodule update --init --recursive --remote
+
+      - name: Set up LaTeX
+        uses: xu-cheng/latex-action@v3
+        with:
+          working_directory: report
+          root_file: main.tex
+
+      - name: Move main.pdf
+        run: |
+          cd report
+          mv -f main.pdf ./build
+
+      - name: Setup SSH for pushing to report repository
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.DEPLOY_KEY_FOR_REPORT_PRIVATE }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan github.com >> ~/.ssh/known_hosts
+
+      - name: Commit and push main.pdf
+        run: |
+          cd report
+          
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+
+          echo "git status:"
+          git status
+
+          git checkout main
+          git pull origin main
+
+          echo "git status after pull:"
+          git status
+          
+          git add build/main.pdf
+          git commit -m "Update report PDF"
+
+          echo "git status after adding commit with new pdf:"
+          git status
+          
+          git remote set-url origin git@github.com:DevopsGroupC/report.git
+          GIT_SSH_COMMAND='ssh -i ~/.ssh/id_rsa -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no' git push -f origin main
+
+      - name: Setup SSH for pushing to main repository
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.DEPLOY_KEY_FOR_MINITWIT_PRIVATE }}" > ~/.ssh/id_minitwit_rsa
+          chmod 600 ~/.ssh/id_minitwit_rsa
+          ssh-keyscan github.com >> ~/.ssh/known_hosts
+
+      - name: Update submodule reference and push
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+
+          git fetch origin
+          git reset --hard origin/develop
+          
+          git submodule update --remote
+
+          git checkout -b update-report-pdf
+          git add report
+          git commit -m "Update submodule reference to latest commit"
+          GIT_SSH_COMMAND='ssh -i ~/.ssh/id_minitwit_rsa -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no' git push -f --set-upstream origin update-report-pdf

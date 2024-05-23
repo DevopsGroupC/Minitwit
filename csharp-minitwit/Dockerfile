@@ -18,7 +18,6 @@ ENV ASPNETCORE_ENVIRONMENT=${ENVIRONMENT}
 
 COPY --from=build /app/out . 
 COPY ./Databases/schema.sql ./schema.sql
-COPY ./Databases/volume/minitwit.db ./Databases/volume/minitwit.db
 COPY ./Services/latest_processed_sim_action_id.txt ./Services/latest_processed_sim_action_id.txt
 EXPOSE 5000
 
