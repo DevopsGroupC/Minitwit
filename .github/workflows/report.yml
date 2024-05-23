@@ -45,18 +45,18 @@ jobs:
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
 
-          Echo "git status:"
+          echo "git status:"
           git status
           
           git submodule update --remote --rebase
 
-          Echo "git status after submodule update:"
+          echo "git status after submodule update:"
           git status
           
           git add build/main.pdf
           git commit -m "Update report PDF"
 
-          Echo "git status after adding commit with new pdf:"
+          echo "git status after adding commit with new pdf:"
           git status
           
           git remote set-url origin git@github.com:DevopsGroupC/report.git
